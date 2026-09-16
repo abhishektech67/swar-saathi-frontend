@@ -3,36 +3,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const API_URL = "https://swar-saathi-backend.onrender.com";
 
 /* ------------------------------------------------------------------ */
-/* Design tokens — "voice & growth": a calm harbor teal for trust,     */
-/* paired with a warm coral for encouragement/energy in the exercises, */
-/* and a soft gold for milestones. Fraunces (display) + Inter (body).  */
+/* Design tokens — matched to the Swar Saathi brand: deep navy for      */
+/* trust and headings, a bright teal for the brand accent, and a warm  */
+/* coral for energy/encouragement, echoed in the logomark.             */
 /* ------------------------------------------------------------------ */
 const theme = {
   colors: {
-    canvas: "#F5F8F6",
-    canvasWash: "radial-gradient(1100px 480px at 8% -10%, #E3F1EE 0%, rgba(227,241,238,0) 55%), radial-gradient(900px 420px at 100% 0%, #FFE9DF 0%, rgba(255,233,223,0) 50%)",
+    canvas: "#EEF6F2",
     surface: "#FFFFFF",
-    surfaceAlt: "#EEF4F1",
-    ink: "#152322",
-    inkSoft: "#57695F",
-    inkFaint: "#8A9A92",
-    line: "#DEE7E1",
-    lineSoft: "#E9EFEC",
-    primary: "#1F6F6B",
-    primaryDark: "#12433F",
-    primarySoft: "#E3F1EE",
-    coral: "#FF6F52",
-    coralDark: "#D9502F",
-    coralSoft: "#FFE9DF",
+    surfaceAlt: "#F2F8F5",
+    navy: "#16283F",
+    navyDark: "#0E1B2C",
+    ink: "#16283F",
+    inkSoft: "#5B6B78",
+    inkFaint: "#93A2AC",
+    line: "#DCE7E1",
+    lineSoft: "#E9F1ED",
+    teal: "#149C81",
+    tealDark: "#0D7A65",
+    tealSoft: "#E0F3ED",
+    coral: "#FF7A52",
+    coralDark: "#DB5A32",
+    coralSoft: "#FFE6DA",
     gold: "#DE9F2E",
     goldSoft: "#FBEBCF",
     danger: "#C6483C",
     dangerSoft: "#FBE7E4",
-    success: "#3D8E67",
+    success: "#1E9D74",
   },
-  radius: { sm: 10, md: 16, lg: 22, pill: 999 },
-  shadow: "0 14px 34px -16px rgba(18,67,63,.28)",
-  shadowSoft: "0 6px 16px -8px rgba(18,67,63,.18)",
+  radius: { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 },
+  shadow: "0 18px 40px -18px rgba(14,27,44,.35)",
+  shadowSoft: "0 6px 18px -8px rgba(14,27,44,.18)",
   font: {
     display: '"Fraunces", Georgia, "Times New Roman", serif',
     body: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -42,7 +43,7 @@ const theme = {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: `${theme.colors.canvasWash}, ${theme.colors.canvas}`,
+    background: theme.colors.canvas,
     color: theme.colors.ink,
     fontFamily: theme.font.body,
     padding: "28px 20px 60px",
@@ -64,53 +65,120 @@ function GlobalStyle() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Inter:wght@400;500;600;700;800&display=swap');
       .sdb * { box-sizing: border-box; }
-      .sdb button { font-family: ${theme.font.body}; }
-      .sdb input { font-family: ${theme.font.body}; }
-      .sdb table { font-family: ${theme.font.body}; }
+      .sdb button, .sdb input, .sdb select, .sdb table { font-family: ${theme.font.body}; }
+      .sdb input[type="checkbox"] { accent-color: ${theme.colors.teal}; width: 17px; height: 17px; }
       @keyframes sdb-pulse-ring {
-        0% { box-shadow: 0 0 0 0 rgba(255,111,82,.42); }
-        70% { box-shadow: 0 0 0 18px rgba(255,111,82,0); }
-        100% { box-shadow: 0 0 0 0 rgba(255,111,82,0); }
+        0% { box-shadow: 0 0 0 0 rgba(255,122,82,.42); }
+        70% { box-shadow: 0 0 0 18px rgba(255,122,82,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,122,82,0); }
       }
-      @keyframes sdb-bob {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-      }
+      @keyframes sdb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
       .sdb-recording { animation: sdb-pulse-ring 1.7s ease-out infinite; }
       .sdb-bob { animation: sdb-bob 3.2s ease-in-out infinite; }
-      .sdb button:focus-visible, .sdb a:focus-visible, .sdb input:focus-visible {
+      .sdb button:focus-visible, .sdb a:focus-visible, .sdb input:focus-visible, .sdb select:focus-visible {
         outline: 3px solid ${theme.colors.gold};
         outline-offset: 2px;
       }
       .sdb-hover-lift { transition: transform .15s ease, box-shadow .15s ease; }
       .sdb-hover-lift:hover { transform: translateY(-2px); box-shadow: ${theme.shadow}; }
+      .sdb-decor { pointer-events: none; }
+      @media (max-width: 860px) { .sdb-decor { display: none; } }
       ::selection { background: ${theme.colors.coralSoft}; }
     `}</style>
   );
 }
 
-function Waveform({ color = theme.colors.primary, bars = 9, height = 34 }) {
+/* ---------------------------- Icons -------------------------------- */
+const iconProps = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+function IconMail(props) { return <svg {...iconProps} width={18} height={18} {...props}><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M4 7l8 6 8-6" /></svg>; }
+function IconLock(props) { return <svg {...iconProps} width={18} height={18} {...props}><rect x="5" y="11" width="14" height="9" rx="2.5" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>; }
+function IconEye(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>; }
+function IconEyeOff(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M3 3l18 18" /><path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.4 4.3M6.6 6.6C4 8.3 2 12 2 12s1.4 2.7 4 4.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></svg>; }
+function IconUser(props) { return <svg {...iconProps} width={18} height={18} {...props}><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" /></svg>; }
+function IconArrowRight(props) { return <svg {...iconProps} width={17} height={17} strokeWidth={2.2} {...props}><path d="M4 12h16M13 5l7 7-7 7" /></svg>; }
+function IconCake(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M4 21v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" /><path d="M2 21h20" /><path d="M8 12V8M12 12V8M16 12V8" /><path d="M12 3c-1 1-1 2 0 3s1 2 0 3" /></svg>; }
+
+/* --------------------------- Logomark -------------------------------- */
+function Logo({ size = 44 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+      <defs>
+        <clipPath id="sdbLogoClip"><circle cx="24" cy="24" r="22" /></clipPath>
+      </defs>
+      <circle cx="24" cy="24" r="22" fill={theme.colors.surfaceAlt} />
+      <g clipPath="url(#sdbLogoClip)">
+        <path d="M2 4 C18 -2 36 0 44 14 C48 24 40 36 26 32 C12 28 4 18 2 4 Z" fill={theme.colors.navy} />
+        <path d="M42 8 C50 20 46 38 30 44 C18 48 4 40 6 26 C8 16 18 20 24 27 C31 35 40 26 42 8 Z" fill={theme.colors.teal} opacity="0.92" />
+        <circle cx="13" cy="35" r="8.5" fill={theme.colors.coral} />
+      </g>
+    </svg>
+  );
+}
+
+function Wordmark({ size = 24, tagline }) {
+  return (
+    <div>
+      <div style={{ fontFamily: theme.font.display, fontWeight: 650, fontSize: size, lineHeight: 1, color: theme.colors.navy }}>
+        Swar <span style={{ color: theme.colors.teal }}>Saathi</span>
+      </div>
+      {tagline && <div style={{ fontSize: 12.5, color: theme.colors.inkSoft, marginTop: 4 }}>{tagline}</div>}
+    </div>
+  );
+}
+
+/* ----------------------- Decorative illustrations --------------------- */
+function Waveform({ color = theme.colors.teal, bars = 9, height = 34 }) {
   const pattern = [0.4, 0.7, 1, 0.55, 0.85, 0.35, 0.9, 0.5, 0.65];
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height }} aria-hidden="true">
       {Array.from({ length: bars }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 5,
-            borderRadius: 3,
-            background: color,
-            height: `${(pattern[i % pattern.length]) * 100}%`,
-            opacity: 0.85,
-          }}
-        />
+        <div key={i} style={{ width: 5, borderRadius: 3, background: color, height: `${pattern[i % pattern.length] * 100}%`, opacity: 0.85 }} />
       ))}
     </div>
   );
 }
 
-function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button" }) {
-  const bg = danger ? theme.colors.danger : secondary ? theme.colors.surface : theme.colors.primary;
+function SoundHead({ size = 220 }) {
+  return (
+    <svg viewBox="0 0 200 200" width={size} height={size} aria-hidden="true">
+      <circle cx="90" cy="100" r="55" fill="none" stroke={theme.colors.navy} strokeWidth="2.5" opacity="0.3" />
+      <path d="M145 72a40 40 0 0 1 0 56" fill="none" stroke={theme.colors.teal} strokeWidth="5" strokeLinecap="round" />
+      <path d="M160 58a66 66 0 0 1 0 84" fill="none" stroke={theme.colors.coral} strokeWidth="5" strokeLinecap="round" opacity="0.8" />
+      <path d="M175 44a92 92 0 0 1 0 112" fill="none" stroke={theme.colors.gold} strokeWidth="5" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+function LeafAccent({ size = 90 }) {
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
+      <ellipse cx="35" cy="60" rx="14" ry="34" fill={theme.colors.teal} transform="rotate(-25 35 60)" opacity="0.85" />
+      <ellipse cx="60" cy="55" rx="12" ry="30" fill={theme.colors.coral} transform="rotate(15 60 55)" opacity="0.85" />
+    </svg>
+  );
+}
+
+function blobStyle(extra) {
+  return { position: "absolute", zIndex: 0, ...extra };
+}
+
+function AuthDecor() {
+  return (
+    <div className="sdb-decor" style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
+      <div style={blobStyle({ top: -70, left: -90, width: 260, height: 260, background: theme.colors.tealSoft, borderRadius: "62% 38% 55% 45% / 55% 45% 55% 45%" })} />
+      <div style={blobStyle({ top: -60, right: -80, width: 220, height: 220, background: theme.colors.coralSoft, borderRadius: "40% 60% 65% 35% / 45% 55% 45% 55%" })} />
+      <div style={blobStyle({ bottom: -100, left: -60, width: 300, height: 300, background: theme.colors.tealSoft, borderRadius: "48% 52% 40% 60% / 55% 45% 55% 45%", opacity: 0.7 })} />
+      <div style={blobStyle({ bottom: -120, right: -110, width: 340, height: 340, background: theme.colors.coralSoft, borderRadius: "55% 45% 60% 40% / 45% 55% 45% 55%", opacity: 0.75 })} />
+      <div style={blobStyle({ top: "38%", left: 40, opacity: 0.9 })}><Waveform height={70} bars={7} /></div>
+      <div style={blobStyle({ bottom: 60, right: 30, opacity: 0.9 })}><SoundHead size={190} /></div>
+      <div style={blobStyle({ bottom: 40, left: 60, opacity: 0.9 })}><LeafAccent size={80} /></div>
+    </div>
+  );
+}
+
+/* ------------------------------- UI kit -------------------------------- */
+function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button", full = false, icon }) {
+  const bg = danger ? theme.colors.danger : secondary ? theme.colors.surface : theme.colors.navy;
   const color = secondary ? theme.colors.ink : "#fff";
   return (
     <button
@@ -121,7 +189,7 @@ function Button({ children, onClick, secondary = false, disabled = false, danger
       style={{
         border: secondary ? `1.5px solid ${theme.colors.line}` : "0",
         borderRadius: theme.radius.sm,
-        padding: "11px 18px",
+        padding: "12px 20px",
         cursor: disabled ? "not-allowed" : "pointer",
         fontWeight: 700,
         fontSize: 14.5,
@@ -129,9 +197,15 @@ function Button({ children, onClick, secondary = false, disabled = false, danger
         color,
         opacity: disabled ? 0.55 : 1,
         boxShadow: disabled || secondary ? "none" : theme.shadowSoft,
+        width: full ? "100%" : "auto",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
       }}
     >
       {children}
+      {icon}
     </button>
   );
 }
@@ -152,7 +226,7 @@ function Section({ title, subtitle, children, right }) {
 }
 
 const accentSets = {
-  teal: { fg: theme.colors.primary, bg: theme.colors.primarySoft },
+  teal: { fg: theme.colors.teal, bg: theme.colors.tealSoft },
   coral: { fg: theme.colors.coralDark, bg: theme.colors.coralSoft },
   gold: { fg: "#8A5E12", bg: theme.colors.goldSoft },
 };
@@ -162,14 +236,7 @@ function ScoreCard({ icon, title, value, subtitle, accent = "teal" }) {
   return (
     <div style={{ ...styles.card, padding: 18, position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: a.fg }} />
-      <div
-        style={{
-          width: 34, height: 34, borderRadius: 10, background: a.bg, color: a.fg,
-          display: "grid", placeItems: "center", fontSize: 16, marginBottom: 10,
-        }}
-      >
-        {icon}
-      </div>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: a.bg, color: a.fg, display: "grid", placeItems: "center", fontSize: 16, marginBottom: 10 }}>{icon}</div>
       <div style={{ color: theme.colors.inkSoft, fontSize: 13, fontWeight: 600 }}>{title}</div>
       <div style={{ fontSize: 29, fontWeight: 800, marginTop: 4, fontFamily: theme.font.display }}>{value}</div>
       {subtitle && <div style={{ ...styles.muted, fontSize: 12.5, marginTop: 5 }}>{subtitle}</div>}
@@ -179,7 +246,7 @@ function ScoreCard({ icon, title, value, subtitle, accent = "teal" }) {
 
 function ProgressBar({ value, label }) {
   const n = Math.max(0, Math.min(100, Number(value) || 0));
-  const color = n >= 85 ? theme.colors.success : n >= 70 ? theme.colors.primary : n >= 50 ? theme.colors.gold : theme.colors.danger;
+  const color = n >= 85 ? theme.colors.success : n >= 70 ? theme.colors.teal : n >= 50 ? theme.colors.gold : theme.colors.danger;
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
@@ -198,7 +265,6 @@ function formatDate(value) {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
 }
-
 function scoreLabel(score) {
   const n = Number(score) || 0;
   if (n >= 85) return "Excellent";
@@ -206,90 +272,51 @@ function scoreLabel(score) {
   if (n >= 50) return "Needs practice";
   return "Keep practicing";
 }
-
 function scoreColor(score) {
   const n = Number(score) || 0;
   if (n >= 85) return theme.colors.success;
-  if (n >= 70) return theme.colors.primary;
+  if (n >= 70) return theme.colors.teal;
   if (n >= 50) return theme.colors.gold;
   return theme.colors.danger;
 }
-
 function decodeJwt(token) {
   try {
     const payload = token.split(".")[1];
     return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 /* ------------------------------------------------------------------ */
-/* AUDIO ANALYSIS — rewritten                                          */
-/*                                                                      */
-/* Bugs fixed vs. the previous version:                                */
-/*  1. The old autocorrelation sum was never normalized by frame        */
-/*     length, so it was structurally biased toward the shortest lag   */
-/*     (highest frequency) no matter what was actually said.           */
-/*  2. It only ever looked at the first 1.5s of audio, so any startup  */
-/*     silence corrupted the whole estimate.                           */
-/*  3. There was no "is this frame actually voiced speech" check, so   */
-/*     silence/noise still produced a confident (wrong) pitch number.  */
-/*                                                                      */
-/* Fix: normalized autocorrelation computed over ~40ms overlapping      */
-/* frames across the WHOLE recording, keeping only frames whose peak   */
-/* correlation is strong enough to count as voiced, then taking the    */
-/* median of those frame pitches (median is robust to stray outliers). */
+/* AUDIO ANALYSIS (unchanged from your working version)                */
 /* ------------------------------------------------------------------ */
-
 const PITCH_FRAME_MS = 40;
 const PITCH_HOP_MS = 20;
 const MIN_VOICE_HZ = 70;
 const MAX_VOICE_HZ = 400;
-const VOICED_CORRELATION_THRESHOLD = 0.32; // 0..1, higher = stricter "this frame is a clear pitch"
+const VOICED_CORRELATION_THRESHOLD = 0.32;
 
 function detectFramePitch(frame, sampleRate) {
   const size = frame.length;
-
-  // Remove DC offset so correlation isn't skewed by mic bias.
   let mean = 0;
   for (let i = 0; i < size; i++) mean += frame[i];
   mean /= size;
-
   const centered = new Float32Array(size);
   let energy = 0;
-  for (let i = 0; i < size; i++) {
-    centered[i] = frame[i] - mean;
-    energy += centered[i] * centered[i];
-  }
+  for (let i = 0; i < size; i++) { centered[i] = frame[i] - mean; energy += centered[i] * centered[i]; }
   const rms = Math.sqrt(energy / size);
-  if (rms < 0.012) return null; // effectively silent — not a voiced frame
-
+  if (rms < 0.012) return null;
   const minLag = Math.floor(sampleRate / MAX_VOICE_HZ);
   const maxLag = Math.min(Math.floor(sampleRate / MIN_VOICE_HZ), size - 1);
   if (maxLag <= minLag) return null;
-
-  let bestLag = -1;
-  let bestCorr = 0;
-
+  let bestLag = -1, bestCorr = 0;
   for (let lag = minLag; lag <= maxLag; lag++) {
     const n = size - lag;
-    let sum = 0;
-    let normA = 0;
-    let normB = 0;
-    for (let i = 0; i < n; i++) {
-      sum += centered[i] * centered[i + lag];
-      normA += centered[i] * centered[i];
-      normB += centered[i + lag] * centered[i + lag];
-    }
+    let sum = 0, normA = 0, normB = 0;
+    for (let i = 0; i < n; i++) { sum += centered[i] * centered[i + lag]; normA += centered[i] * centered[i]; normB += centered[i + lag] * centered[i + lag]; }
     const denom = Math.sqrt(normA * normB) || 1e-9;
-    const corr = sum / denom; // normalized to roughly -1..1, independent of window length
-    if (corr > bestCorr) {
-      bestCorr = corr;
-      bestLag = lag;
-    }
+    const corr = sum / denom;
+    if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
   }
-
   if (bestLag <= 0 || bestCorr < VOICED_CORRELATION_THRESHOLD) return null;
   return sampleRate / bestLag;
 }
@@ -297,88 +324,70 @@ function detectFramePitch(frame, sampleRate) {
 async function analyzeAudio(blob) {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) throw new Error("Web Audio API is not supported in this browser.");
-
   const arrayBuffer = await blob.arrayBuffer();
   if (!arrayBuffer || arrayBuffer.byteLength < 800) {
     throw new Error("That recording was too short or empty — please record for at least 1-2 seconds.");
   }
-
   const ctx = new AudioContextClass();
   try {
     let buffer;
-    try {
-      buffer = await ctx.decodeAudioData(arrayBuffer);
-    } catch (decodeErr) {
-      throw new Error("Couldn't process that recording. Please try again (Chrome or Edge work best).");
-    }
-
+    try { buffer = await ctx.decodeAudioData(arrayBuffer); }
+    catch { throw new Error("Couldn't process that recording. Please try again (Chrome or Edge work best)."); }
     const { length, numberOfChannels, sampleRate } = buffer;
     if (!length || !sampleRate) throw new Error("The recording had no audio data — please try again.");
-
     const mono = new Float32Array(length);
     for (let c = 0; c < numberOfChannels; c++) {
       const data = buffer.getChannelData(c);
       for (let i = 0; i < length; i++) mono[i] += data[i] / numberOfChannels;
     }
-
-    // Overall clarity heuristic — computed over the WHOLE recording.
-    let sumSquares = 0;
-    let crossings = 0;
+    let sumSquares = 0, crossings = 0;
     for (let i = 0; i < length; i++) sumSquares += mono[i] * mono[i];
     for (let i = 1; i < length; i++) if ((mono[i - 1] < 0) !== (mono[i] < 0)) crossings++;
     const overallRms = Math.sqrt(sumSquares / Math.max(1, length));
     const zcr = crossings / Math.max(1, length);
-
-    // Frame-by-frame pitch across the whole clip.
     const frameSize = Math.max(256, Math.round(sampleRate * (PITCH_FRAME_MS / 1000)));
     const hopSize = Math.max(128, Math.round(sampleRate * (PITCH_HOP_MS / 1000)));
     const voicedPitches = [];
     let totalFrames = 0;
-
     for (let start = 0; start + frameSize <= length; start += hopSize) {
       totalFrames++;
       const frame = mono.subarray(start, start + frameSize);
       const pitch = detectFramePitch(frame, sampleRate);
       if (pitch && pitch >= MIN_VOICE_HZ && pitch <= MAX_VOICE_HZ) voicedPitches.push(pitch);
     }
-
     let pitchMeanHz = 0;
     if (voicedPitches.length) {
       voicedPitches.sort((a, b) => a - b);
-      pitchMeanHz = Math.round(voicedPitches[Math.floor(voicedPitches.length / 2)]); // median = robust to outliers
+      pitchMeanHz = Math.round(voicedPitches[Math.floor(voicedPitches.length / 2)]);
     }
-
     const voicedRatio = totalFrames ? voicedPitches.length / totalFrames : 0;
-
     let clarity = Math.round(Math.min(100, overallRms * 650));
     if (overallRms < 0.005) clarity = 10;
     else if (overallRms < 0.01) clarity = Math.max(25, clarity);
     if (zcr > 0.18) clarity -= 10;
     clarity = Math.max(0, Math.min(100, clarity));
-
     const pitchScore = pitchMeanHz > 0 ? Math.max(55, Math.min(100, 100 - Math.abs(pitchMeanHz - 180) / 4)) : 20;
-    const pronunciation = Math.round(
-      Math.max(0, Math.min(100, clarity * 0.5 + pitchScore * 0.3 + voicedRatio * 100 * 0.2))
-    );
+    const pronunciation = Math.round(Math.max(0, Math.min(100, clarity * 0.5 + pitchScore * 0.3 + voicedRatio * 100 * 0.2)));
     const overall = Math.round((clarity + pronunciation + pitchScore) / 3);
-
     return {
       durationSeconds: Number(buffer.duration.toFixed(2)),
-      pitchMeanHz,
-      clarityScore: clarity,
-      pronunciationScore: pronunciation,
-      overallScore: overall,
-      voicedRatio: Number(voicedRatio.toFixed(2)),
-      noVoiceDetected: voicedPitches.length === 0,
+      pitchMeanHz, clarityScore: clarity, pronunciationScore: pronunciation, overallScore: overall,
+      voicedRatio: Number(voicedRatio.toFixed(2)), noVoiceDetected: voicedPitches.length === 0,
     };
-  } finally {
-    await ctx.close();
-  }
+  } finally { await ctx.close(); }
 }
 
+/* -------------------------- Token storage -------------------------- */
+/* "Remember me" decides whether the session survives closing the tab: */
+/* checked -> localStorage (persists); unchecked -> sessionStorage.    */
+function saveToken(value, remember) {
+  if (remember) { localStorage.setItem("token", value); sessionStorage.removeItem("token"); }
+  else { sessionStorage.setItem("token", value); localStorage.removeItem("token"); }
+}
+function readToken() { return localStorage.getItem("token") || sessionStorage.getItem("token"); }
+function clearToken() { localStorage.removeItem("token"); sessionStorage.removeItem("token"); }
+
 function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -399,8 +408,7 @@ function App() {
   const chunksRef = useRef([]);
   const recordingStartedAtRef = useRef(0);
 
-  const token = () => localStorage.getItem("token");
-  const authHeaders = () => ({ Authorization: `Bearer ${token()}` });
+  const authHeaders = () => ({ Authorization: `Bearer ${readToken()}` });
 
   const api = async (path, options = {}) => {
     const response = await fetch(`${API_URL}${path}`, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } });
@@ -418,13 +426,13 @@ function App() {
   };
 
   const logout = () => {
-    resetAudio(); localStorage.removeItem("token");
+    resetAudio(); clearToken();
     setUser(null); setPatients([]); setSelectedPatient(null); setPatientDetail(null);
-    setFeedback([]); setExercises([]); setPatientDashboard(null); setMessage(""); setEmail(""); setPassword("");
+    setFeedback([]); setExercises([]); setPatientDashboard(null); setMessage("");
   };
 
-  const login = async (e) => {
-    e.preventDefault(); setLoading(true); setMessage("");
+  const handleLogin = async ({ email, password, remember }) => {
+    setLoading(true); setMessage("");
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
@@ -433,7 +441,21 @@ function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Login failed");
-      localStorage.setItem("token", data.token); setUser(data.user); setMessage("");
+      saveToken(data.token, remember); setUser(data.user);
+    } catch (err) { setMessage(err.message); } finally { setLoading(false); }
+  };
+
+  const handleRegister = async ({ fullName, email, password, role, dateOfBirth, remember }) => {
+    setLoading(true); setMessage("");
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: fullName.trim(), email: email.trim(), password, role, dateOfBirth: dateOfBirth || undefined }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not create account");
+      saveToken(data.token, remember); setUser(data.user);
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
@@ -479,64 +501,42 @@ function App() {
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("Microphone recording isn't supported in this browser.");
       if (typeof MediaRecorder === "undefined") throw new Error("This browser doesn't support MediaRecorder — try Chrome or Edge.");
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       streamRef.current = stream; chunksRef.current = [];
-
       const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"]
         .find((x) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x));
       const recorder = preferred ? new MediaRecorder(stream, { mimeType: preferred }) : new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
-
       recorder.ondataavailable = (e) => { if (e.data?.size) chunksRef.current.push(e.data); };
-
       recorder.onerror = (e) => {
         setMessage(`Recording error: ${e.error?.message || "unknown error"}`);
-        setIsRecording(false);
-        stream.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
+        setIsRecording(false); stream.getTracks().forEach((t) => t.stop()); streamRef.current = null;
       };
-
       recorder.onstop = async () => {
         setIsRecording(false); stream.getTracks().forEach((t) => t.stop()); streamRef.current = null;
-
-        if (!chunksRef.current.length) {
-          setMessage("No audio was captured — check your microphone permissions and try again.");
-          return;
-        }
+        if (!chunksRef.current.length) { setMessage("No audio was captured — check your microphone permissions and try again."); return; }
         const elapsedMs = Date.now() - recordingStartedAtRef.current;
-        if (elapsedMs < 400) {
-          setMessage("That recording was too short — hold the recording for at least a second while you speak.");
-          return;
-        }
-
+        if (elapsedMs < 400) { setMessage("That recording was too short — hold the recording for at least a second while you speak."); return; }
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         if (audioUrl) URL.revokeObjectURL(audioUrl);
         setAudioUrl(URL.createObjectURL(blob)); setUploading(true); setMessage("Analyzing your speech...");
         try {
-          const result = await analyzeAudio(blob);
-          setAnalysis(result);
-          if (result.noVoiceDetected) {
-            setMessage("No clear voice was detected in that recording — try speaking louder or closer to the mic, then record again.");
-          } else {
-            setMessage("Analysis complete. Saving your result...");
-          }
+          const result = await analyzeAudio(blob); setAnalysis(result);
+          setMessage(result.noVoiceDetected
+            ? "No clear voice was detected in that recording — try speaking louder or closer to the mic, then record again."
+            : "Analysis complete. Saving your result...");
           const saved = await uploadRecording(blob, result);
           const merged = { ...result, ...(saved.analysis || {}) }; setAnalysis(merged);
-          if (!result.noVoiceDetected) {
-            setMessage(`Saved successfully. Difficulty: Level ${saved.difficulty?.current ?? "—"}.`);
-          }
+          if (!result.noVoiceDetected) setMessage(`Saved successfully. Difficulty: Level ${saved.difficulty?.current ?? "—"}.`);
           await loadPatientDashboard(user.id);
         } catch (err) { setMessage(err.message || "Audio analysis/upload failed."); }
         finally { setUploading(false); }
       };
-
       recorder.start(250);
       recordingStartedAtRef.current = Date.now();
       setIsRecording(true); setAnalysis(null); setMessage("Recording in progress — speak clearly.");
     } catch (err) {
-      setIsRecording(false);
-      setMessage(err.message || "Microphone permission is required.");
+      setIsRecording(false); setMessage(err.message || "Microphone permission is required.");
       if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
     }
   };
@@ -544,10 +544,10 @@ function App() {
   const stopRecording = () => { if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") mediaRecorderRef.current.stop(); };
 
   useEffect(() => {
-    const t = localStorage.getItem("token");
+    const t = readToken();
     if (!t) return;
     const payload = decodeJwt(t);
-    if (!payload?.userId || !payload?.role) { localStorage.removeItem("token"); return; }
+    if (!payload?.userId || !payload?.role) { clearToken(); return; }
     setUser({ id: payload.userId, role: payload.role });
   }, []);
 
@@ -567,7 +567,7 @@ function App() {
   }, [patientLogs]);
 
   if (!user) {
-    return <Login email={email} password={password} setEmail={setEmail} setPassword={setPassword} login={login} loading={loading} message={message} />;
+    return <AuthScreen onLogin={handleLogin} onRegister={handleRegister} loading={loading} message={message} notify={setMessage} />;
   }
 
   if (user.role === "PATIENT") {
@@ -596,46 +596,19 @@ function App() {
             subtitle="Record directly in the browser. The score is an acoustic demo score, not a clinical diagnosis."
             right={<Button secondary onClick={() => loadPatientDashboard(user.id)}>Refresh</Button>}
           >
-            <div
-              style={{
-                background: theme.colors.primarySoft,
-                border: `1px solid ${theme.colors.line}`,
-                borderRadius: theme.radius.lg,
-                padding: "32px 24px",
-                textAlign: "center",
-              }}
-            >
+            <div style={{ background: theme.colors.tealSoft, border: `1px solid ${theme.colors.line}`, borderRadius: theme.radius.lg, padding: "32px 24px", textAlign: "center" }}>
               <div className={isRecording ? "" : "sdb-bob"} style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <div
-                  className={isRecording ? "sdb-recording" : ""}
-                  style={{
-                    width: 68, height: 68, borderRadius: "50%",
-                    background: isRecording ? theme.colors.coral : theme.colors.primary,
-                    display: "grid", placeItems: "center", fontSize: 26,
-                  }}
-                >
+                <div className={isRecording ? "sdb-recording" : ""} style={{ width: 68, height: 68, borderRadius: "50%", background: isRecording ? theme.colors.coral : theme.colors.teal, display: "grid", placeItems: "center", fontSize: 26 }}>
                   {isRecording ? "🔴" : "🎙️"}
                 </div>
               </div>
-              <h3 style={{ fontFamily: theme.font.display, fontWeight: 650, margin: "0 0 6px" }}>
-                {isRecording ? "Recording your speech…" : "Ready to practice?"}
-              </h3>
+              <h3 style={{ fontFamily: theme.font.display, fontWeight: 650, margin: "0 0 6px" }}>{isRecording ? "Recording your speech…" : "Ready to practice?"}</h3>
               <p style={{ ...styles.muted, maxWidth: 620, margin: "0 auto 20px", lineHeight: 1.6 }}>
-                {isRecording
-                  ? "Speak naturally and complete the assigned exercise."
-                  : "Allow microphone access, speak clearly, then stop the recording to get instant feedback."}
+                {isRecording ? "Speak naturally and complete the assigned exercise." : "Allow microphone access, speak clearly, then stop the recording to get instant feedback."}
               </p>
-              {!isRecording ? (
-                <Button onClick={startRecording} disabled={uploading}>Start recording</Button>
-              ) : (
-                <Button danger onClick={stopRecording}>Stop recording</Button>
-              )}
+              {!isRecording ? <Button onClick={startRecording} disabled={uploading}>Start recording</Button> : <Button danger onClick={stopRecording}>Stop recording</Button>}
               {uploading && <p style={{ marginTop: 14, marginBottom: 0, ...styles.muted }}>Processing and saving…</p>}
-              {audioUrl && (
-                <div style={{ marginTop: 22 }}>
-                  <audio controls src={audioUrl} style={{ width: "100%", maxWidth: 600 }} />
-                </div>
-              )}
+              {audioUrl && <div style={{ marginTop: 22 }}><audio controls src={audioUrl} style={{ width: "100%", maxWidth: 600 }} /></div>}
             </div>
           </Section>
 
@@ -646,14 +619,8 @@ function App() {
               <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
                 <ProgressBar value={patientLatest.pronunciationScore} label="Pronunciation score" />
                 <ProgressBar value={patientLatest.clarityScore} label="Clarity score" />
-                <div>
-                  <div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Pitch mean</div>
-                  <strong style={{ fontSize: 24, fontFamily: theme.font.display }}>{Math.round(patientLatest.pitchMeanHz || 0)} Hz</strong>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Latest session</div>
-                  <strong>{formatDate(patientLatest.recordedAt)}</strong>
-                </div>
+                <div><div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Pitch mean</div><strong style={{ fontSize: 24, fontFamily: theme.font.display }}>{Math.round(patientLatest.pitchMeanHz || 0)} Hz</strong></div>
+                <div><div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Latest session</div><strong>{formatDate(patientLatest.recordedAt)}</strong></div>
               </div>
               <div style={{ marginTop: 22, overflowX: "auto" }}><ProgressTable logs={patientLogs} /></div>
             </Section>
@@ -687,6 +654,7 @@ function App() {
               <Info label="Email" value={patientDetail?.patient?.email || selectedPatient.email} />
               <Info label="Diagnosis" value={patientDetail?.profile?.diagnosis || "Not specified"} />
               <Info label="Date of birth" value={patientDetail?.profile?.dateOfBirth ? new Date(patientDetail.profile.dateOfBirth).toLocaleDateString() : "Not specified"} />
+              <Info label="Clinical notes" value={patientDetail?.profile?.clinicalNotes || "Not specified"} />
             </div>
           </Section>
 
@@ -709,8 +677,13 @@ function App() {
           <Section title="Caregiver feedback" subtitle="Feedback already stored for this patient.">
             {feedback.length ? feedback.map((f, i) => (
               <div key={f.id || i} style={{ padding: 15, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginBottom: 10, background: theme.colors.surfaceAlt }}>
-                <strong>{f.message || f.feedback || f.comment || "Caregiver feedback"}</strong>
-                <div style={{ ...styles.muted, fontSize: 12, marginTop: 6 }}>{formatDate(f.createdAt || f.updatedAt)}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <strong>{f.feedbackText || "Caregiver feedback"}</strong>
+                  {f.moodRating != null && (
+                    <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, height: "fit-content" }}>Mood {f.moodRating}/5</span>
+                  )}
+                </div>
+                <div style={{ ...styles.muted, fontSize: 12, marginTop: 6 }}>{formatDate(f.createdAt)}</div>
               </div>
             )) : <Empty text="No caregiver feedback recorded yet." />}
           </Section>
@@ -741,11 +714,7 @@ function App() {
             <ScoreCard icon="🧠" accent="gold" title="Adaptive therapy" value="Active" subtitle="Difficulty adjusts from scores" />
           </div>
 
-          <Section
-            title="Quick access"
-            subtitle="Jump to what matters for today's therapy workflow."
-            right={<Button onClick={loadPatients} disabled={loading}>{loading ? "Refreshing…" : "Refresh patients"}</Button>}
-          >
+          <Section title="Quick access" subtitle="Jump to what matters for today's therapy workflow." right={<Button onClick={loadPatients} disabled={loading}>{loading ? "Refreshing…" : "Refresh patients"}</Button>}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Button secondary onClick={loadPatients}>Patient records</Button>
               <Button secondary onClick={() => document.getElementById("patients")?.scrollIntoView({ behavior: "smooth" })}>Progress analytics</Button>
@@ -768,65 +737,14 @@ function App() {
     );
   }
 
-  // CAREGIVER: the current backend exposes patient list + feedback read APIs, so this portal
-  // uses those existing endpoints without inventing a write API.
   return <CaregiverPortal user={user} logout={logout} api={api} />;
 }
 
-function Login({ email, password, setEmail, setPassword, login, loading, message }) {
-  return (
-    <div className="sdb" style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <GlobalStyle />
-      <div
-        style={{
-          ...styles.card,
-          width: "100%",
-          maxWidth: 460,
-          padding: "38px 34px",
-          background: `linear-gradient(180deg, ${theme.colors.surface} 0%, ${theme.colors.surface} 70%, ${theme.colors.primarySoft} 200%)`,
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div className="sdb-bob" style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-            <Waveform />
-          </div>
-          <h1 style={{ margin: "6px 0 4px", fontFamily: theme.font.display, fontWeight: 650, fontSize: 32, color: theme.colors.primaryDark }}>Swar Saathi</h1>
-          <p style={{ ...styles.muted, margin: 0 }}>Speech & language therapy, from clinic to home practice.</p>
-        </div>
-
-        <form onSubmit={login}>
-          <label style={{ display: "block", marginTop: 24, fontWeight: 700, fontSize: 14 }}>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="Enter your email" style={inputStyle} />
-          </label>
-          <label style={{ display: "block", marginTop: 16, fontWeight: 700, fontSize: 14 }}>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required placeholder="Enter your password" style={inputStyle} />
-          </label>
-          <div style={{ marginTop: 22 }}>
-            <Button type="submit" disabled={loading}>{loading ? "Logging in…" : "Log in"}</Button>
-          </div>
-        </form>
-
-        {message && <Notice text={message} />}
-
-        <div style={{ marginTop: 22, padding: 16, background: theme.colors.surfaceAlt, borderRadius: theme.radius.md, fontSize: 12.5, color: theme.colors.inkSoft, lineHeight: 1.8 }}>
-          <strong style={{ color: theme.colors.ink }}>Demo accounts</strong>
-          <div>Therapist — therapist@hopespeech.org</div>
-          <div>Patient — patient.aarav@hopespeech.org</div>
-          <div>Caregiver — parent@hopespeech.org</div>
-          <div>Password — Password123!</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+/* ---------------------------- Auth screen ---------------------------- */
 const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
-  marginTop: 7,
-  padding: "13px 14px",
+  padding: "13px 14px 13px 42px",
   border: `1.5px solid ${theme.colors.line}`,
   borderRadius: theme.radius.sm,
   fontSize: 15,
@@ -834,18 +752,175 @@ const inputStyle = {
   color: theme.colors.ink,
 };
 
+function InputField({ icon, rightSlot, ...inputProps }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: theme.colors.inkFaint, display: "flex" }}>{icon}</span>
+      <input {...inputProps} style={{ ...inputStyle, paddingRight: rightSlot ? 42 : 14 }} />
+      {rightSlot && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", display: "flex" }}>{rightSlot}</span>}
+    </div>
+  );
+}
+
+function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
+  const [mode, setMode] = useState("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
+
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  const [fullName, setFullName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("PATIENT");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+
+  const switchMode = (next) => { setMode(next); notify(""); setShowPassword(false); };
+
+  const submitLogin = (e) => { e.preventDefault(); onLogin({ email: loginEmail, password: loginPassword, remember }); };
+
+  const submitSignup = (e) => {
+    e.preventDefault();
+    if (signupPassword.length < 8) { notify("Password must be at least 8 characters."); return; }
+    if (signupPassword !== confirmPassword) { notify("Passwords don't match."); return; }
+    if (role === "PATIENT" && !dateOfBirth) { notify("Date of birth is required for patient accounts."); return; }
+    onRegister({ fullName, email: signupEmail, password: signupPassword, role, dateOfBirth, remember });
+  };
+
+  const forgotPassword = () => notify("Password reset isn't self-service yet — please contact your clinic administrator.");
+
+  return (
+    <div className="sdb" style={{ ...styles.page, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+      <GlobalStyle />
+      <AuthDecor />
+
+      <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 4px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Logo size={44} />
+          <Wordmark size={22} tagline="Better speech · Brighter futures" />
+        </div>
+        <div style={{ display: "none" }} className="sdb-decor" />
+        <div style={{ fontSize: 13.5, color: theme.colors.inkSoft, fontWeight: 600, display: "flex", gap: 8 }} className="sdb-decor">
+          <span>Support</span><span>·</span><span>Track</span><span>·</span><span>Empower</span>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "40px 0" }}>
+        <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl }}>
+          <div style={{ textAlign: "center" }}>
+            <div className="sdb-bob" style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+              <Logo size={64} />
+            </div>
+            <Wordmark size={28} />
+            <p style={{ ...styles.muted, margin: "10px 0 0" }}>{mode === "login" ? "Your voice. Our support." : "Start your therapy journey."}</p>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: 26 }}>
+            <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25 }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
+            <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
+          </div>
+
+          {mode === "login" ? (
+            <form onSubmit={submitLogin}>
+              <div style={{ marginTop: 24 }}>
+                <InputField icon={<IconMail />} type="email" required placeholder="Email address" autoComplete="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <InputField
+                  icon={<IconLock />} type={showPassword ? "text" : "password"} required placeholder="Password" autoComplete="current-password"
+                  value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                  rightSlot={<button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ border: 0, background: "none", cursor: "pointer", color: theme.colors.inkFaint, padding: 0, display: "flex" }}>{showPassword ? <IconEyeOff /> : <IconEye />}</button>}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 13.5 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, color: theme.colors.inkSoft, cursor: "pointer" }}>
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                  Remember me
+                </label>
+                <button type="button" onClick={forgotPassword} style={{ border: 0, background: "none", cursor: "pointer", color: theme.colors.teal, fontWeight: 700, fontSize: 13.5, padding: 0 }}>Forgot password?</button>
+              </div>
+              <div style={{ marginTop: 22 }}>
+                <Button type="submit" full disabled={loading} icon={!loading && <IconArrowRight />}>{loading ? "Logging in…" : "Log in"}</Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={submitSignup}>
+              <div style={{ marginTop: 24 }}>
+                <InputField icon={<IconUser />} type="text" required placeholder="Full name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <InputField icon={<IconMail />} type="email" required placeholder="Email address" autoComplete="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <InputField
+                  icon={<IconLock />} type={showPassword ? "text" : "password"} required placeholder="Password (min. 8 characters)" autoComplete="new-password"
+                  value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)}
+                  rightSlot={<button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ border: 0, background: "none", cursor: "pointer", color: theme.colors.inkFaint, padding: 0, display: "flex" }}>{showPassword ? <IconEyeOff /> : <IconEye />}</button>}
+                />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <InputField icon={<IconLock />} type={showPassword ? "text" : "password"} required placeholder="Confirm password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              </div>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+                <label style={{ flex: "1 1 160px" }}>
+                  <select value={role} onChange={(e) => setRole(e.target.value)} style={{ ...inputStyle, paddingLeft: 14 }}>
+                    <option value="PATIENT">I'm a patient</option>
+                    <option value="THERAPIST">I'm a therapist</option>
+                    <option value="CAREGIVER">I'm a caregiver</option>
+                  </select>
+                </label>
+                {role === "PATIENT" && (
+                  <label style={{ flex: "1 1 160px" }}>
+                    <InputField icon={<IconCake />} type="date" required placeholder="Date of birth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+                  </label>
+                )}
+              </div>
+
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, color: theme.colors.inkSoft, cursor: "pointer", fontSize: 13.5 }}>
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                  Keep me logged in on this device
+                </label>
+              </div>
+
+              <div style={{ marginTop: 18 }}>
+                <Button type="submit" full disabled={loading} icon={!loading && <IconArrowRight />}>{loading ? "Creating account…" : "Create account"}</Button>
+              </div>
+            </form>
+          )}
+
+          {message && <Notice text={message} />}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
+            <div style={{ flex: 1, height: 1, background: theme.colors.line }} />
+            <span style={{ fontSize: 12.5, color: theme.colors.inkFaint }}>Or</span>
+            <div style={{ flex: 1, height: 1, background: theme.colors.line }} />
+          </div>
+
+          {mode === "login" ? (
+            <Button secondary full onClick={() => switchMode("signup")} icon={<IconUser />}>Create new account</Button>
+          ) : (
+            <Button secondary full onClick={() => switchMode("login")}>Already have an account? Log in</Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Header({ title, user, logout, back }) {
   return (
     <div style={{ ...styles.card, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, flexWrap: "wrap" }}>
       <div>
         {back && (
-          <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.primary, fontWeight: 700, fontSize: 13.5 }}>
-            ← Back to patients
-          </button>
+          <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Waveform color={theme.colors.primary} height={20} />
-          <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 24 }}>Swar Saathi</h1>
+          <Logo size={30} />
+          <Wordmark size={20} />
         </div>
         <div style={{ fontWeight: 600, marginTop: 6, color: theme.colors.inkSoft, fontSize: 14 }}>{title} · {user.fullName || user.email || "User"}</div>
       </div>
@@ -856,20 +931,12 @@ function Header({ title, user, logout, back }) {
 
 function Notice({ text }) {
   return (
-    <div style={{ background: theme.colors.goldSoft, border: `1px solid ${theme.colors.gold}55`, borderRadius: theme.radius.sm, padding: 13, marginBottom: 18, color: "#6B4A0E" }}>
-      {text}
-    </div>
+    <div style={{ background: theme.colors.goldSoft, border: `1px solid ${theme.colors.gold}55`, borderRadius: theme.radius.sm, padding: 13, marginBottom: 18, marginTop: 4, color: "#6B4A0E" }}>{text}</div>
   );
 }
-
 function Empty({ text }) {
-  return (
-    <div style={{ padding: 26, textAlign: "center", color: theme.colors.inkSoft, background: theme.colors.surfaceAlt, borderRadius: theme.radius.md }}>
-      {text}
-    </div>
-  );
+  return <div style={{ padding: 26, textAlign: "center", color: theme.colors.inkSoft, background: theme.colors.surfaceAlt, borderRadius: theme.radius.md }}>{text}</div>;
 }
-
 function Info({ label, value }) {
   return (
     <div style={{ padding: 15, background: theme.colors.surfaceAlt, borderRadius: theme.radius.md }}>
@@ -888,9 +955,7 @@ function ExerciseCard({ assignment, therapist }) {
           <h3 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 600, fontSize: 17 }}>{e.title || "Exercise"}</h3>
           <p style={{ ...styles.muted, margin: "6px 0" }}>{e.description || "Speech therapy exercise"}</p>
         </div>
-        <span style={{ background: theme.colors.primarySoft, color: theme.colors.primaryDark, padding: "6px 12px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, height: "fit-content" }}>
-          Level {e.difficultyLevel ?? "—"}
-        </span>
+        <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "6px 12px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, height: "fit-content" }}>Level {e.difficultyLevel ?? "—"}</span>
       </div>
       <div style={{ marginTop: 12, padding: 14, background: theme.colors.surfaceAlt, borderRadius: 10 }}>
         <strong style={{ fontSize: 13.5 }}>Instructions</strong>
@@ -919,9 +984,7 @@ function AnalysisCard({ analysis }) {
 function ProgressTable({ logs }) {
   return (
     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 650 }}>
-      <thead>
-        <tr>{["Date", "Duration", "Pitch", "Clarity", "Pronunciation", "Level"].map((h) => <th key={h} style={th}>{h}</th>)}</tr>
-      </thead>
+      <thead><tr>{["Date", "Duration", "Pitch", "Clarity", "Pronunciation", "Level"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
       <tbody>
         {logs.map((x, i) => (
           <tr key={x.id || i}>
@@ -937,11 +1000,10 @@ function ProgressTable({ logs }) {
     </table>
   );
 }
-
 const th = { textAlign: "left", padding: "10px 8px", borderBottom: `2px solid ${theme.colors.lineSoft}`, fontSize: 12, color: theme.colors.inkSoft, fontWeight: 700 };
 const td = { padding: "11px 8px", borderBottom: `1px solid ${theme.colors.lineSoft}`, fontSize: 13.5 };
 
-const avatarPalette = [theme.colors.primary, theme.colors.coral, theme.colors.gold, theme.colors.primaryDark];
+const avatarPalette = [theme.colors.teal, theme.colors.coral, theme.colors.gold, theme.colors.navy];
 function avatarColor(seed) {
   const s = String(seed || "");
   let sum = 0;
@@ -954,9 +1016,7 @@ function PatientRow({ patient, onOpen }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, padding: 16, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 11, flexWrap: "wrap" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-        <div style={{ width: 46, height: 46, borderRadius: "50%", background: avatarColor(patient.fullName || patient.id), color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontFamily: theme.font.display }}>
-          {patient.fullName?.[0]?.toUpperCase() || "P"}
-        </div>
+        <div style={{ width: 46, height: 46, borderRadius: "50%", background: avatarColor(patient.fullName || patient.id), color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontFamily: theme.font.display }}>{patient.fullName?.[0]?.toUpperCase() || "P"}</div>
         <div>
           <strong>{patient.fullName}</strong>
           <div style={{ ...styles.muted, fontSize: 13 }}>{patient.email}</div>
@@ -976,13 +1036,11 @@ function PatientRow({ patient, onOpen }) {
 
 function Recommendation({ score, difficulty }) {
   const n = Number(score) || 0;
-  const text = n >= 85
-    ? "Performance is strong. Increase challenge gradually and introduce more complex target words."
-    : n < 60
-    ? "Performance suggests additional guided practice. Keep the task simple and repeat the target sound."
+  const text = n >= 85 ? "Performance is strong. Increase challenge gradually and introduce more complex target words."
+    : n < 60 ? "Performance suggests additional guided practice. Keep the task simple and repeat the target sound."
     : "Maintain the current level and focus on consistency before increasing difficulty.";
   const headline = n >= 85 ? "Increase difficulty" : n < 60 ? "Reinforce fundamentals" : "Maintain current difficulty";
-  const accent = n >= 85 ? theme.colors.success : n < 60 ? theme.colors.coralDark : theme.colors.primary;
+  const accent = n >= 85 ? theme.colors.success : n < 60 ? theme.colors.coralDark : theme.colors.teal;
   return (
     <div style={{ padding: 18, borderRadius: theme.radius.md, background: theme.colors.surfaceAlt, borderLeft: `4px solid ${accent}` }}>
       <strong style={{ color: accent, fontFamily: theme.font.display, fontSize: 16 }}>{headline}</strong>
@@ -999,10 +1057,7 @@ function MiniBars({ patients }) {
         const s = Number(p.latestPronunciationScore || 0);
         return (
           <div key={p.id}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
-              <span>{p.fullName}</span>
-              <strong>{s}%</strong>
-            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}><span>{p.fullName}</span><strong>{s}%</strong></div>
             <div style={{ height: 12, background: theme.colors.surfaceAlt, borderRadius: 99 }}>
               <div style={{ width: `${Math.max(3, Math.min(100, s))}%`, height: "100%", background: scoreColor(s), borderRadius: 99, transition: "width .4s ease" }} />
             </div>
@@ -1045,15 +1100,9 @@ function CaregiverPortal({ user, logout, api }) {
       <div style={styles.wrap}>
         <Header title="Caregiver portal" user={user} logout={logout} />
         {message && <Notice text={message} />}
-
-        <Section
-          title="Patient monitoring"
-          subtitle="Review assigned exercises, therapy progress and caregiver feedback."
-          right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}
-        >
+        <Section title="Patient monitoring" subtitle="Review assigned exercises, therapy progress and caregiver feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
           {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => open(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients available."} />}
         </Section>
-
         {selected && detail && (
           <>
             <Section title={`${selected.fullName}'s therapy summary`} subtitle="Current therapy data.">
@@ -1067,15 +1116,18 @@ function CaregiverPortal({ user, logout, api }) {
             <Section title="Assigned exercises">
               {detail.exercises?.length ? detail.exercises.map((a) => <ExerciseCard key={a.id} assignment={a} />) : <Empty text="No exercises assigned." />}
             </Section>
-            <Section title="Progress">
-              <ProgressTable logs={detail.audioLogs || []} />
-            </Section>
+            <Section title="Progress"><ProgressTable logs={detail.audioLogs || []} /></Section>
             <Section title="Therapist / caregiver feedback">
               <p style={styles.muted}>Feedback currently stored for this patient:</p>
               {feedback.length ? feedback.map((f, i) => (
                 <div key={f.id || i} style={{ padding: 14, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 9, background: theme.colors.surfaceAlt }}>
-                  <strong>{f.message || f.feedback || f.comment || "Feedback"}</strong>
-                  <div style={{ ...styles.muted, fontSize: 12, marginTop: 5 }}>{formatDate(f.createdAt || f.updatedAt)}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <strong>{f.feedbackText || "Feedback"}</strong>
+                    {f.moodRating != null && (
+                      <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, height: "fit-content" }}>Mood {f.moodRating}/5</span>
+                    )}
+                  </div>
+                  <div style={{ ...styles.muted, fontSize: 12, marginTop: 5 }}>{formatDate(f.createdAt)}</div>
                 </div>
               )) : <Empty text="No feedback recorded yet." />}
             </Section>

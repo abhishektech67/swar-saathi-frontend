@@ -1,48 +1,14 @@
-
 /* =========================================================
-   Speech-DB — Professional Health-Tech UI
-   Complete replacement for src/App.css
+   Swar Saathi — global stylesheet
+   Most visual styling now lives inline in App.jsx (design
+   tokens + the injected <GlobalStyle> block), so this file
+   only needs resets, the page background, and a few things
+   that are easier to set once globally: scrollbars, selection
+   color, and print/reduced-motion behaviour.
    ========================================================= */
 
 :root {
-  --bg: #f5f7fb;
-  --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --surface-hover: #f1f5f9;
-  --text: #172033;
-  --text-soft: #667085;
-  --text-muted: #98a2b3;
-  --border: #e4e7ec;
-  --border-strong: #d0d5dd;
-
-  --primary: #3157d5;
-  --primary-dark: #2445b2;
-  --primary-soft: #eef2ff;
-  --primary-border: #c7d2fe;
-
-  --success: #15945a;
-  --warning: #c77b11;
-  --danger: #d92d20;
-
-  --radius-sm: 9px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-
-  --shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.04);
-  --shadow-md: 0 8px 28px rgba(16, 24, 40, 0.07);
-  --shadow-lg: 0 18px 50px rgba(16, 24, 40, 0.10);
-
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --sdb-canvas: #EEF6F2;
 }
 
 * {
@@ -58,394 +24,37 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(49, 87, 213, 0.055), transparent 28rem),
-    radial-gradient(circle at 95% 8%, rgba(21, 148, 90, 0.035), transparent 24rem),
-    var(--bg);
-  color: var(--text);
+  background: var(--sdb-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-body,
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-button {
-  appearance: none;
-  border: 0;
-  font: inherit;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease,
-    border-color 160ms ease,
-    opacity 160ms ease;
-}
-
-button:not(:disabled) {
-  cursor: pointer;
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
-
-button:not(:disabled):active {
-  transform: translateY(0);
-}
-
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-audio:focus-visible {
-  outline: 3px solid rgba(49, 87, 213, 0.22);
-  outline-offset: 2px;
-}
-
-button[disabled] {
-  cursor: not-allowed;
-}
-
-/* Main application surface */
 #root {
   min-height: 100vh;
 }
 
-/* Page wrapper created by App.jsx */
-#root > div {
-  min-height: 100vh;
+/* Custom scrollbar, Chrome/Edge/Safari */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c7d6cf;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #adc2b8;
 }
 
-/* Improve the main page background without fighting the layout */
-#root > div[style*="background"] {
-  background:
-    radial-gradient(circle at 10% 0%, rgba(49, 87, 213, 0.055), transparent 28rem),
-    radial-gradient(circle at 92% 5%, rgba(21, 148, 90, 0.035), transparent 22rem),
-    var(--bg) !important;
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c7d6cf transparent;
 }
-
-/* =========================================================
-   Cards / sections
-   ========================================================= */
-
-section {
-  position: relative;
-  border-color: var(--border) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transition:
-    box-shadow 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
-}
-
-section:hover {
-  border-color: #d9deea !important;
-  box-shadow: var(--shadow-md) !important;
-}
-
-/* Header card */
-section:first-child {
-  backdrop-filter: blur(10px);
-}
-
-/* =========================================================
-   Typography
-   ========================================================= */
-
-h1,
-h2,
-h3 {
-  color: var(--text);
-  letter-spacing: -0.025em;
-}
-
-h1 {
-  font-size: clamp(25px, 3vw, 34px);
-  line-height: 1.1;
-  font-weight: 800;
-}
-
-h2 {
-  font-weight: 750;
-}
-
-h3 {
-  font-weight: 700;
-}
-
-p {
-  line-height: 1.6;
-}
-
-/* =========================================================
-   Buttons
-   ========================================================= */
-
-button {
-  min-height: 42px;
-  border-radius: 10px !important;
-  font-weight: 700 !important;
-}
-
-button[style*="background: rgb(17, 24, 39)"],
-button[style*="background:#111827"] {
-  box-shadow: 0 5px 14px rgba(17, 24, 39, 0.14);
-}
-
-button[style*="background: rgb(17, 24, 39)"]:not(:disabled):hover,
-button[style*="background:#111827"]:not(:disabled):hover {
-  box-shadow: 0 8px 20px rgba(49, 87, 213, 0.20);
-}
-
-/* Secondary buttons */
-button[style*="border: 1px solid"] {
-  background: #fff !important;
-  color: #344054 !important;
-  border-color: var(--border-strong) !important;
-  box-shadow: var(--shadow-sm);
-}
-
-button[style*="border: 1px solid"]:not(:disabled):hover {
-  background: var(--primary-soft) !important;
-  color: var(--primary-dark) !important;
-  border-color: var(--primary-border) !important;
-}
-
-/* =========================================================
-   Inputs
-   ========================================================= */
-
-input,
-textarea,
-select {
-  color: var(--text);
-  background: #fff;
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #98a2b3;
-}
-
-input:hover,
-textarea:hover,
-select:hover {
-  border-color: #98a2b3;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(49, 87, 213, 0.09);
-  outline: none;
-}
-
-/* =========================================================
-   Tables
-   ========================================================= */
-
-table {
-  color: var(--text);
-}
-
-thead th {
-  color: #667085 !important;
-  font-weight: 700 !important;
-  background: var(--surface-soft);
-}
-
-tbody tr {
-  transition: background-color 150ms ease;
-}
-
-tbody tr:hover {
-  background: #fafbff;
-}
-
-tbody td {
-  color: #475467;
-}
-
-/* =========================================================
-   Audio player
-   ========================================================= */
-
-audio {
-  height: 42px;
-  border-radius: 999px;
-  background: #f2f4f7;
-}
-
-/* =========================================================
-   Progress bars
-   ========================================================= */
-
-/* The progress component in App.jsx uses nested divs.
-   Give the bars a more polished appearance. */
-div[style*="height: 9px"],
-div[style*="height: 12px"] {
-  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
-}
-
-div[style*="height: 9px"] > div,
-div[style*="height: 12px"] > div {
-  background: linear-gradient(90deg, #3157d5, #5b7bea) !important;
-  transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* =========================================================
-   Login screen
-   ========================================================= */
-
-form {
-  width: 100%;
-}
-
-form button[type="submit"] {
-  width: 100%;
-  margin-top: 22px;
-  min-height: 48px;
-  background: linear-gradient(135deg, #3157d5, #2445b2) !important;
-  box-shadow: 0 10px 24px rgba(49, 87, 213, 0.22);
-}
-
-form button[type="submit"]:not(:disabled):hover {
-  box-shadow: 0 14px 30px rgba(49, 87, 213, 0.28);
-}
-
-/* =========================================================
-   Patient / therapist list rows
-   ========================================================= */
-
-div[style*="border: 1px solid #e5e7eb"][style*="borderRadius: 12px"] {
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease;
-}
-
-div[style*="border: 1px solid #e5e7eb"][style*="borderRadius: 12px"]:hover {
-  border-color: #d5dbeb !important;
-  box-shadow: var(--shadow-sm);
-}
-
-/* Avatar */
-div[style*="borderRadius: \"50%\""] {
-  flex-shrink: 0;
-}
-
-/* =========================================================
-   Recording area
-   ========================================================= */
-
-div[style*="Recording in progress"] {
-  color: var(--danger);
-}
-
-button[style*="background: rgb(220, 38, 38)"],
-button[style*="background:#dc2626"] {
-  box-shadow: 0 8px 22px rgba(220, 38, 38, 0.20);
-}
-
-button[style*="background: rgb(220, 38, 38)"]:hover,
-button[style*="background:#dc2626"]:hover {
-  box-shadow: 0 11px 26px rgba(220, 38, 38, 0.26);
-}
-
-/* =========================================================
-   Notice / status messages
-   ========================================================= */
-
-div[style*="background: rgb(255, 248, 225)"],
-div[style*="background:#fff8e1"] {
-  color: #694f00;
-  background: #fffbeb !important;
-  border-color: #f4d78b !important;
-}
-
-/* =========================================================
-   Responsive layout
-   ========================================================= */
-
-@media (max-width: 760px) {
-  body {
-    background: var(--bg);
-  }
-
-  #root > div {
-    padding: 14px !important;
-  }
-
-  section {
-    padding: 17px !important;
-    border-radius: 15px !important;
-  }
-
-  h1 {
-    font-size: 27px;
-  }
-
-  h2 {
-    font-size: 19px !important;
-  }
-
-  h3 {
-    font-size: 17px;
-  }
-
-  button {
-    min-height: 44px;
-  }
-
-  input,
-  textarea,
-  select {
-    min-height: 45px;
-  }
-
-  table {
-    font-size: 12px;
-  }
-
-  thead th,
-  tbody td {
-    padding: 9px 7px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  #root > div {
-    padding: 10px !important;
-  }
-
-  section {
-    padding: 14px !important;
-  }
-
-  button {
-    width: 100%;
-  }
-
-  audio {
-    width: 100%;
-  }
-}
-
-/* =========================================================
-   Reduced motion accessibility
-   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   *,
