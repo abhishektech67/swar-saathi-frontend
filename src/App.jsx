@@ -790,7 +790,7 @@ function Login({ email, password, setEmail, setPassword, login, loading, message
           <div className="sdb-bob" style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
             <Waveform />
           </div>
-          <h1 style={{ margin: "6px 0 4px", fontFamily: theme.font.display, fontWeight: 650, fontSize: 32, color: theme.colors.primaryDark }}>Speech-DB</h1>
+          <h1 style={{ margin: "6px 0 4px", fontFamily: theme.font.display, fontWeight: 650, fontSize: 32, color: theme.colors.primaryDark }}>Swar Saathi</h1>
           <p style={{ ...styles.muted, margin: 0 }}>Speech & language therapy, from clinic to home practice.</p>
         </div>
 
@@ -845,7 +845,7 @@ function Header({ title, user, logout, back }) {
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Waveform color={theme.colors.primary} height={20} />
-          <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 24 }}>Speech-DB</h1>
+          <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 24 }}>Swar Saathi</h1>
         </div>
         <div style={{ fontWeight: 600, marginTop: 6, color: theme.colors.inkSoft, fontSize: 14 }}>{title} · {user.fullName || user.email || "User"}</div>
       </div>
