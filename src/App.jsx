@@ -65,7 +65,7 @@ function GlobalStyle() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Inter:wght@400;500;600;700;800&display=swap');
       .sdb * { box-sizing: border-box; }
-      .sdb button, .sdb input, .sdb select, .sdb table { font-family: ${theme.font.body}; }
+      .sdb button, .sdb input, .sdb select, .sdb textarea, .sdb table { font-family: ${theme.font.body}; }
       .sdb input[type="checkbox"] { accent-color: ${theme.colors.teal}; width: 17px; height: 17px; }
       @keyframes sdb-pulse-ring {
         0% { box-shadow: 0 0 0 0 rgba(255,122,82,.42); }
@@ -73,9 +73,11 @@ function GlobalStyle() {
         100% { box-shadow: 0 0 0 0 rgba(255,122,82,0); }
       }
       @keyframes sdb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+      @keyframes sdb-pop { 0% { transform: scale(0.85); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
       .sdb-recording { animation: sdb-pulse-ring 1.7s ease-out infinite; }
       .sdb-bob { animation: sdb-bob 3.2s ease-in-out infinite; }
-      .sdb button:focus-visible, .sdb a:focus-visible, .sdb input:focus-visible, .sdb select:focus-visible {
+      .sdb-pop { animation: sdb-pop .35s ease-out; }
+      .sdb button:focus-visible, .sdb a:focus-visible, .sdb input:focus-visible, .sdb select:focus-visible, .sdb textarea:focus-visible {
         outline: 3px solid ${theme.colors.gold};
         outline-offset: 2px;
       }
@@ -97,6 +99,10 @@ function IconEyeOff(props) { return <svg {...iconProps} width={18} height={18} {
 function IconUser(props) { return <svg {...iconProps} width={18} height={18} {...props}><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" /></svg>; }
 function IconArrowRight(props) { return <svg {...iconProps} width={17} height={17} strokeWidth={2.2} {...props}><path d="M4 12h16M13 5l7 7-7 7" /></svg>; }
 function IconCake(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M4 21v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" /><path d="M2 21h20" /><path d="M8 12V8M12 12V8M16 12V8" /><path d="M12 3c-1 1-1 2 0 3s1 2 0 3" /></svg>; }
+function IconFlame(props) { return <svg {...iconProps} width={16} height={16} {...props}><path d="M12 2c1 4-4 5-4 9a4 4 0 0 0 8 0c2 1 3 3 3 5a7 7 0 0 1-14 0c0-5 4-7 4-11 1 1 1 2 1 3 1-2 1-4 2-6Z" /></svg>; }
+function IconCheck(props) { return <svg {...iconProps} width={16} height={16} strokeWidth={2.4} {...props}><path d="M20 6 9 17l-5-5" /></svg>; }
+function IconStar(props) { return <svg {...iconProps} width={16} height={16} fill="currentColor" stroke="none" {...props}><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7L12 17.3 5.7 20.9l1.7-7L2 9.2l7.1-.6L12 2z" /></svg>; }
+function IconSparkle(props) { return <svg {...iconProps} width={16} height={16} {...props}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" /></svg>; }
 
 /* --------------------------- Logomark -------------------------------- */
 function Logo({ size = 44 }) {
@@ -177,7 +183,7 @@ function AuthDecor() {
 }
 
 /* ------------------------------- UI kit -------------------------------- */
-function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button", full = false, icon }) {
+function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button", full = false, icon, small = false }) {
   const bg = danger ? theme.colors.danger : secondary ? theme.colors.surface : theme.colors.navy;
   const color = secondary ? theme.colors.ink : "#fff";
   return (
@@ -189,10 +195,10 @@ function Button({ children, onClick, secondary = false, disabled = false, danger
       style={{
         border: secondary ? `1.5px solid ${theme.colors.line}` : "0",
         borderRadius: theme.radius.sm,
-        padding: "12px 20px",
+        padding: small ? "8px 14px" : "12px 20px",
         cursor: disabled ? "not-allowed" : "pointer",
         fontWeight: 700,
-        fontSize: 14.5,
+        fontSize: small ? 13 : 14.5,
         background: bg,
         color,
         opacity: disabled ? 0.55 : 1,
@@ -284,6 +290,110 @@ function decodeJwt(token) {
     const payload = token.split(".")[1];
     return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
   } catch { return null; }
+}
+
+/* ------------------------------------------------------------------ */
+/* GAMIFICATION — points, streaks, badges                              */
+/* ------------------------------------------------------------------ */
+// Badge thresholds are simple and explainable, matching the adaptive-
+// difficulty philosophy of the rest of the app: no hidden logic.
+const POINT_BADGES = [
+  { min: 500, label: "Gold Voice", icon: "🥇" },
+  { min: 200, label: "Silver Voice", icon: "🥈" },
+  { min: 50, label: "Bronze Voice", icon: "🥉" },
+];
+const STREAK_BADGES = [
+  { min: 14, label: "2-Week Streak", icon: "🔥" },
+  { min: 7, label: "Week Streak", icon: "🔥" },
+  { min: 3, label: "3-Day Streak", icon: "🔥" },
+];
+
+function computeBadges(totalPoints, longestStreak) {
+  const badges = [];
+  const pointBadge = POINT_BADGES.find((b) => (totalPoints || 0) >= b.min);
+  if (pointBadge) badges.push(pointBadge);
+  const streakBadge = STREAK_BADGES.find((b) => (longestStreak || 0) >= b.min);
+  if (streakBadge) badges.push(streakBadge);
+  return badges;
+}
+
+function GamificationPanel({ totalPoints = 0, currentStreak = 0, longestStreak = 0 }) {
+  const badges = computeBadges(totalPoints, longestStreak);
+  return (
+    <div style={{ ...styles.card, marginBottom: 18, background: theme.colors.navy, color: "#fff", border: "none" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", fontSize: 22 }}>🏆</div>
+          <div>
+            <div style={{ fontFamily: theme.font.display, fontSize: 20, fontWeight: 650 }}>{totalPoints} points</div>
+            <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+              <IconFlame /> {currentStreak}-day streak {longestStreak > currentStreak && `· best ${longestStreak}`}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {badges.length ? badges.map((b) => (
+            <span key={b.label} style={{ background: "rgba(255,255,255,.12)", padding: "7px 13px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{b.icon}</span>{b.label}
+            </span>
+          )) : (
+            <span style={{ fontSize: 12.5, opacity: 0.7 }}>Complete exercises to earn your first badge</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* TREND CHART — dependency-free inline SVG line chart for milestone   */
+/* trends over recent sessions (pronunciation + clarity over time).    */
+/* ------------------------------------------------------------------ */
+function TrendChart({ logs, height = 220 }) {
+  const points = useMemo(() => {
+    // logs are newest-first; chart reads oldest -> newest left to right
+    return [...logs].reverse().slice(-14);
+  }, [logs]);
+
+  if (!points.length) return <Empty text="Record a few sessions to see your trend line." />;
+
+  const width = 640;
+  const padding = 34;
+  const innerW = width - padding * 2;
+  const innerH = height - padding * 2;
+  const n = points.length;
+  const xFor = (i) => padding + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const yFor = (v) => padding + innerH - (Math.max(0, Math.min(100, v)) / 100) * innerH;
+
+  const lineFor = (key) =>
+    points.map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(Number(p[key] || 0)).toFixed(1)}`).join(" ");
+
+  const gridLines = [0, 25, 50, 75, 100];
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxWidth: width, display: "block" }}>
+        {gridLines.map((g) => (
+          <g key={g}>
+            <line x1={padding} x2={width - padding} y1={yFor(g)} y2={yFor(g)} stroke={theme.colors.lineSoft} strokeWidth="1" />
+            <text x={4} y={yFor(g) + 4} fontSize="10" fill={theme.colors.inkFaint}>{g}</text>
+          </g>
+        ))}
+        <path d={lineFor("clarityScore")} fill="none" stroke={theme.colors.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+        <path d={lineFor("pronunciationScore")} fill="none" stroke={theme.colors.teal} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={`p-${i}`} cx={xFor(i)} cy={yFor(Number(p.pronunciationScore || 0))} r="3.5" fill={theme.colors.teal} />
+        ))}
+        {points.map((p, i) => (
+          <circle key={`c-${i}`} cx={xFor(i)} cy={yFor(Number(p.clarityScore || 0))} r="3.5" fill={theme.colors.coral} />
+        ))}
+      </svg>
+      <div style={{ display: "flex", gap: 18, marginTop: 10, fontSize: 12.5, color: theme.colors.inkSoft }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 99, background: theme.colors.teal, display: "inline-block" }} />Pronunciation</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 99, background: theme.colors.coral, display: "inline-block" }} />Clarity</span>
+      </div>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -398,6 +508,9 @@ function App() {
   const [feedback, setFeedback] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [patientDashboard, setPatientDashboard] = useState(null);
+  const [completingId, setCompletingId] = useState(null);
+  const [recommendation, setRecommendation] = useState("");
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -428,7 +541,7 @@ function App() {
   const logout = () => {
     resetAudio(); clearToken();
     setUser(null); setPatients([]); setSelectedPatient(null); setPatientDetail(null);
-    setFeedback([]); setExercises([]); setPatientDashboard(null); setMessage("");
+    setFeedback([]); setExercises([]); setPatientDashboard(null); setMessage(""); setRecommendation("");
   };
 
   const handleLogin = async ({ email, password, remember }) => {
@@ -477,7 +590,7 @@ function App() {
   };
 
   const loadPatientDetail = async (patient) => {
-    setSelectedPatient(patient); setLoading(true); setMessage(""); setExercises([]); setFeedback([]); setPatientDetail(null);
+    setSelectedPatient(patient); setLoading(true); setMessage(""); setExercises([]); setFeedback([]); setPatientDetail(null); setRecommendation("");
     try {
       const [detail, fb] = await Promise.all([
         api(`/api/therapist/patients/${patient.id}`),
@@ -497,6 +610,26 @@ function App() {
       setMessage("New exercises added!");
       await afterReload();
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
+  };
+
+  // Marks an exercise assignment complete and awards its points — this is
+  // what makes the gamification panel (points/streak/badges) move.
+  const completeExercise = async (assignmentId, afterReload) => {
+    setCompletingId(assignmentId); setMessage("");
+    try {
+      const data = await api(`/api/exercise-assignments/${assignmentId}/complete`, { method: "POST" });
+      if (data.alreadyCompleted) setMessage("Already marked complete.");
+      else setMessage(`Nice work! +${data.pointsAwarded} points.`);
+      await afterReload();
+    } catch (err) { setMessage(err.message); } finally { setCompletingId(null); }
+  };
+
+  const fetchRecommendation = async (patientId) => {
+    setRecommendationLoading(true); setMessage("");
+    try {
+      const data = await api(`/api/patients/${patientId}/ai-recommendation`, { method: "POST" });
+      setRecommendation(data.recommendation || "");
+    } catch (err) { setMessage(err.message); } finally { setRecommendationLoading(false); }
   };
 
   const uploadRecording = async (blob, result) => {
@@ -598,6 +731,8 @@ function App() {
           <Header title="Patient portal" user={user} logout={logout} />
           {message && <Notice text={message} />}
 
+          <GamificationPanel totalPoints={profile.totalPoints} currentStreak={profile.currentStreak} longestStreak={profile.longestStreak} />
+
           <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="🎯" accent="teal" title="Current level" value={`Level ${currentLevel}`} subtitle="Adjusts with your practice" />
             <ScoreCard icon="📝" accent="gold" title="Exercises" value={exercises.length} subtitle="Assigned to you" />
@@ -607,7 +742,7 @@ function App() {
 
           <Section
             title="Your home exercises"
-            subtitle="Complete your assigned exercises, then record your speech practice below. New ones are generated for you automatically as you progress."
+            subtitle="Complete your assigned exercises to earn points, then record your speech practice below. New ones are generated for you automatically as you progress."
             right={
               <Button
                 secondary
@@ -618,7 +753,14 @@ function App() {
               </Button>
             }
           >
-            {exercises.length === 0 ? <Empty text="No exercises assigned yet — check back soon." /> : exercises.map((a) => <ExerciseCard key={a.id} assignment={a} />)}
+            {exercises.length === 0 ? <Empty text="No exercises assigned yet — check back soon." /> : exercises.map((a) => (
+              <ExerciseCard
+                key={a.id}
+                assignment={a}
+                onComplete={() => completeExercise(a.id, () => loadPatientDashboard(user.id))}
+                completing={completingId === a.id}
+              />
+            ))}
           </Section>
 
           <Section
@@ -652,6 +794,12 @@ function App() {
                 <div><div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Pitch mean</div><strong style={{ fontSize: 24, fontFamily: theme.font.display }}>{Math.round(patientLatest.pitchMeanHz || 0)} Hz</strong></div>
                 <div><div style={{ fontSize: 13, color: theme.colors.inkSoft }}>Latest session</div><strong>{formatDate(patientLatest.recordedAt)}</strong></div>
               </div>
+              {patientLogs.length > 1 && (
+                <div style={{ marginTop: 24 }}>
+                  <h3 style={{ fontFamily: theme.font.display, fontSize: 15.5, margin: "0 0 12px" }}>Milestone trend</h3>
+                  <TrendChart logs={patientLogs} />
+                </div>
+              )}
               <div style={{ marginTop: 22, overflowX: "auto" }}><ProgressTable logs={patientLogs} /></div>
             </Section>
           )}
@@ -664,16 +812,19 @@ function App() {
     const logs = patientDetail?.audioLogs || [];
     const latest = logs[0] || null;
     const average = logs.length ? Math.round(logs.reduce((s, x) => s + Number(x.pronunciationScore || 0), 0) / logs.length) : 0;
+    const pf = patientDetail?.profile || {};
     return (
       <div className="sdb" style={styles.page}>
         <GlobalStyle />
         <div style={styles.wrap}>
-          <Header title="Therapist · patient profile" user={user} logout={logout} back={() => { setSelectedPatient(null); setPatientDetail(null); setFeedback([]); }} />
+          <Header title="Therapist · patient profile" user={user} logout={logout} back={() => { setSelectedPatient(null); setPatientDetail(null); setFeedback([]); setRecommendation(""); }} />
           {message && <Notice text={message} />}
+
+          <GamificationPanel totalPoints={pf.totalPoints} currentStreak={pf.currentStreak} longestStreak={pf.longestStreak} />
 
           <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="👤" accent="teal" title="Patient" value={selectedPatient.fullName} subtitle={selectedPatient.email} />
-            <ScoreCard icon="🎯" accent="gold" title="Difficulty" value={`Level ${patientDetail?.profile?.currentDifficultyLevel ?? "—"}`} subtitle="Current adaptive level" />
+            <ScoreCard icon="🎯" accent="gold" title="Difficulty" value={`Level ${pf.currentDifficultyLevel ?? "—"}`} subtitle="Current adaptive level" />
             <ScoreCard icon="🎙️" accent="coral" title="Sessions" value={logs.length} subtitle="Audio logs" />
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${average}%`} subtitle="Across saved sessions" />
           </div>
@@ -682,9 +833,9 @@ function App() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
               <Info label="Name" value={patientDetail?.patient?.fullName || selectedPatient.fullName} />
               <Info label="Email" value={patientDetail?.patient?.email || selectedPatient.email} />
-              <Info label="Diagnosis" value={patientDetail?.profile?.diagnosis || "Not specified"} />
-              <Info label="Date of birth" value={patientDetail?.profile?.dateOfBirth ? new Date(patientDetail.profile.dateOfBirth).toLocaleDateString() : "Not specified"} />
-              <Info label="Clinical notes" value={patientDetail?.profile?.clinicalNotes || "Not specified"} />
+              <Info label="Diagnosis" value={pf.diagnosis || "Not specified"} />
+              <Info label="Date of birth" value={pf.dateOfBirth ? new Date(pf.dateOfBirth).toLocaleDateString() : "Not specified"} />
+              <Info label="Clinical notes" value={pf.clinicalNotes || "Not specified"} />
             </div>
           </Section>
 
@@ -716,6 +867,12 @@ function App() {
                 <ScoreCard icon="⏱️" accent="teal" title="Duration" value={`${Number(latest.durationSeconds || 0).toFixed(1)}s`} subtitle={formatDate(latest.recordedAt)} />
               </div>
             )}
+            {logs.length > 1 && (
+              <div style={{ marginBottom: 22 }}>
+                <h3 style={{ fontFamily: theme.font.display, fontSize: 15.5, margin: "0 0 12px" }}>Milestone trend</h3>
+                <TrendChart logs={logs} />
+              </div>
+            )}
             {logs.length ? <ProgressTable logs={logs} /> : <Empty text="No audio sessions have been saved yet." />}
           </Section>
 
@@ -733,8 +890,18 @@ function App() {
             )) : <Empty text="No caregiver feedback recorded yet." />}
           </Section>
 
-          <Section title="Adaptive recommendation" subtitle="A simple, explainable recommendation based on recent performance.">
-            <Recommendation score={latest?.pronunciationScore || 0} difficulty={patientDetail?.profile?.currentDifficultyLevel} />
+          <Section
+            title="AI-assisted recommendation"
+            subtitle="Ask Claude for a fresh, explainable recommendation based on this patient's diagnosis and most recent scores."
+            right={<Button secondary disabled={recommendationLoading} onClick={() => fetchRecommendation(selectedPatient.id)}>{recommendationLoading ? "Thinking…" : "✨ Get AI recommendation"}</Button>}
+          >
+            {recommendation ? (
+              <div style={{ padding: 18, borderRadius: theme.radius.md, background: theme.colors.tealSoft, borderLeft: `4px solid ${theme.colors.teal}`, lineHeight: 1.65 }}>
+                {recommendation}
+              </div>
+            ) : (
+              <Recommendation score={latest?.pronunciationScore || 0} difficulty={pf.currentDifficultyLevel} />
+            )}
           </Section>
         </div>
       </div>
@@ -1003,23 +1170,38 @@ function Info({ label, value }) {
   );
 }
 
-function ExerciseCard({ assignment, therapist }) {
+function ExerciseCard({ assignment, therapist, onComplete, completing }) {
   const e = assignment.exercise || {};
+  const done = Boolean(assignment.isCompleted);
   return (
-    <div style={{ padding: 18, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12 }}>
+    <div style={{ padding: 18, border: `1px solid ${done ? theme.colors.success : theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12, background: done ? theme.colors.tealSoft : "transparent" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 600, fontSize: 17 }}>{e.title || "Exercise"}</h3>
           <p style={{ ...styles.muted, margin: "6px 0" }}>{e.description || "Speech therapy exercise"}</p>
         </div>
-        <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "6px 12px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, height: "fit-content" }}>Level {e.difficultyLevel ?? "—"}</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "6px 12px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, height: "fit-content" }}>Level {e.difficultyLevel ?? "—"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: theme.colors.gold, fontWeight: 700 }}><IconStar />{e.gamePointsValue ?? 10} pts</span>
+        </div>
       </div>
       <div style={{ marginTop: 12, padding: 14, background: theme.colors.surfaceAlt, borderRadius: 10 }}>
         <strong style={{ fontSize: 13.5 }}>Instructions</strong>
         <p style={{ ...styles.muted, margin: "5px 0 0" }}>{e.instructions || "Follow the therapist's instructions."}</p>
       </div>
-      <div style={{ marginTop: 10, fontSize: 12, color: theme.colors.inkFaint }}>
-        {e.category || "Therapy"}{assignment.dueDate ? ` · Due ${new Date(assignment.dueDate).toLocaleDateString()}` : ""}{therapist ? " · Therapist view" : ""}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ fontSize: 12, color: theme.colors.inkFaint }}>
+          {e.category || "Therapy"}{assignment.dueDate ? ` · Due ${new Date(assignment.dueDate).toLocaleDateString()}` : ""}{therapist ? " · Therapist view" : ""}
+        </div>
+        {!therapist && (
+          done ? (
+            <span className="sdb-pop" style={{ display: "flex", alignItems: "center", gap: 6, color: theme.colors.success, fontWeight: 700, fontSize: 13 }}>
+              <IconCheck /> Completed{assignment.pointsAwarded ? ` · +${assignment.pointsAwarded} pts` : ""}
+            </span>
+          ) : (
+            <Button small onClick={onComplete} disabled={completing}>{completing ? "Saving…" : "Mark complete"}</Button>
+          )
+        )}
       </div>
     </div>
   );
@@ -1077,7 +1259,11 @@ function PatientRow({ patient, onOpen }) {
         <div>
           <strong>{patient.fullName}</strong>
           <div style={{ ...styles.muted, fontSize: 13 }}>{patient.email}</div>
-          <div style={{ ...styles.muted, fontSize: 12, marginTop: 4 }}>Sessions: {patient.audioLogCount || 0} · Exercises: {patient.exerciseCount || 0}</div>
+          <div style={{ ...styles.muted, fontSize: 12, marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <span>Sessions: {patient.audioLogCount || 0} · Exercises: {patient.exerciseCount || 0}</span>
+            {Number(patient.totalPoints || 0) > 0 && <span style={{ color: theme.colors.gold, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}><IconStar />{patient.totalPoints} pts</span>}
+            {Number(patient.currentStreak || 0) > 0 && <span style={{ color: theme.colors.coralDark, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}><IconFlame />{patient.currentStreak}d</span>}
+          </div>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -1103,6 +1289,7 @@ function Recommendation({ score, difficulty }) {
       <strong style={{ color: accent, fontFamily: theme.font.display, fontSize: 16 }}>{headline}</strong>
       <p style={{ ...styles.muted, lineHeight: 1.65, margin: "8px 0" }}>{text}</p>
       <div style={{ fontSize: 13 }}>Current recorded level: <strong>Level {difficulty ?? "—"}</strong></div>
+      <div style={{ fontSize: 11.5, color: theme.colors.inkFaint, marginTop: 10 }}>Rule-based fallback shown until an AI recommendation is requested above.</div>
     </div>
   );
 }
@@ -1125,6 +1312,53 @@ function MiniBars({ patients }) {
   );
 }
 
+/* ------------------------- Feedback submission form ----------------- */
+function FeedbackForm({ onSubmit, submitting }) {
+  const [text, setText] = useState("");
+  const [mood, setMood] = useState(4);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onSubmit({ feedbackText: text.trim(), moodRating: mood }, () => setText(""));
+  };
+
+  const moodEmoji = ["😞", "😕", "😐", "🙂", "😄"];
+
+  return (
+    <form onSubmit={submit} style={{ padding: 16, border: `1px dashed ${theme.colors.line}`, borderRadius: theme.radius.md, marginBottom: 16, background: theme.colors.surfaceAlt }}>
+      <strong style={{ fontSize: 13.5 }}>Share an update</strong>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="How did practice go today? Anything the therapist should know?"
+        rows={3}
+        style={{ ...inputStyle, paddingLeft: 14, marginTop: 10, resize: "vertical", fontFamily: theme.font.body }}
+      />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[1, 2, 3, 4, 5].map((v) => (
+            <button
+              type="button"
+              key={v}
+              onClick={() => setMood(v)}
+              aria-label={`Mood ${v} of 5`}
+              style={{
+                width: 36, height: 36, borderRadius: 10, fontSize: 17, cursor: "pointer",
+                border: `1.5px solid ${mood === v ? theme.colors.teal : theme.colors.line}`,
+                background: mood === v ? theme.colors.tealSoft : theme.colors.surface,
+              }}
+            >
+              {moodEmoji[v - 1]}
+            </button>
+          ))}
+        </div>
+        <Button type="submit" small disabled={submitting || !text.trim()}>{submitting ? "Sending…" : "Send feedback"}</Button>
+      </div>
+    </form>
+  );
+}
+
 function CaregiverPortal({ user, logout, api }) {
   const [patients, setPatients] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -1132,6 +1366,7 @@ function CaregiverPortal({ user, logout, api }) {
   const [detail, setDetail] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -1149,6 +1384,23 @@ function CaregiverPortal({ user, logout, api }) {
     finally { setLoading(false); }
   };
 
+  const submitFeedback = async ({ feedbackText, moodRating }, onDone) => {
+    if (!selected) return;
+    setSubmittingFeedback(true); setMessage("");
+    try {
+      await api(`/api/patients/${selected.id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedbackText, moodRating }),
+      });
+      setMessage("Feedback sent!");
+      onDone?.();
+      const f = await api(`/api/patients/${selected.id}/feedback`).catch(() => []);
+      setFeedback(Array.isArray(f) ? f : []);
+    } catch (e) { setMessage(e.message); }
+    finally { setSubmittingFeedback(false); }
+  };
+
   useEffect(() => { load(); }, []);
 
   return (
@@ -1162,6 +1414,7 @@ function CaregiverPortal({ user, logout, api }) {
         </Section>
         {selected && detail && (
           <>
+            <GamificationPanel totalPoints={detail.profile?.totalPoints} currentStreak={detail.profile?.currentStreak} longestStreak={detail.profile?.longestStreak} />
             <Section title={`${selected.fullName}'s therapy summary`} subtitle="Current therapy data.">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
                 <Info label="Current difficulty" value={`Level ${detail.profile?.currentDifficultyLevel ?? "—"}`} />
@@ -1171,11 +1424,18 @@ function CaregiverPortal({ user, logout, api }) {
               </div>
             </Section>
             <Section title="Assigned exercises">
-              {detail.exercises?.length ? detail.exercises.map((a) => <ExerciseCard key={a.id} assignment={a} />) : <Empty text="No exercises assigned." />}
+              {detail.exercises?.length ? detail.exercises.map((a) => <ExerciseCard key={a.id} assignment={a} therapist />) : <Empty text="No exercises assigned." />}
             </Section>
-            <Section title="Progress"><ProgressTable logs={detail.audioLogs || []} /></Section>
-            <Section title="Therapist / caregiver feedback">
-              <p style={styles.muted}>Feedback currently stored for this patient:</p>
+            <Section title="Progress">
+              {detail.audioLogs?.length > 1 && (
+                <div style={{ marginBottom: 20 }}>
+                  <TrendChart logs={detail.audioLogs} />
+                </div>
+              )}
+              <ProgressTable logs={detail.audioLogs || []} />
+            </Section>
+            <Section title="Therapist / caregiver feedback" subtitle="Send a remote update to the therapy team, or review what's already been shared.">
+              <FeedbackForm onSubmit={submitFeedback} submitting={submittingFeedback} />
               {feedback.length ? feedback.map((f, i) => (
                 <div key={f.id || i} style={{ padding: 14, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 9, background: theme.colors.surfaceAlt }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
