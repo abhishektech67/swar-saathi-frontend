@@ -875,7 +875,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
     objectFit: "contain",
   }}
 />
-            <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25 }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
+            <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25, color: theme.colors.navy }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
             <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
           </div>
 
