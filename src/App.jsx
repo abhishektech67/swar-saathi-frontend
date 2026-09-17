@@ -487,6 +487,18 @@ function App() {
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
+  // Asks the backend to have Claude generate a fresh batch of exercises for
+  // a patient (tailored to their difficulty level, diagnosis and recent
+  // scores), then re-loads whichever view is showing that patient's data.
+  const generateExercises = async (patientId, afterReload) => {
+    setLoading(true); setMessage("Generating new exercises...");
+    try {
+      await api(`/api/patients/${patientId}/generate-exercises`, { method: "POST" });
+      setMessage("New exercises added!");
+      await afterReload();
+    } catch (err) { setMessage(err.message); } finally { setLoading(false); }
+  };
+
   const uploadRecording = async (blob, result) => {
     const fd = new FormData(); fd.append("audio", blob, "recording.webm");
     fd.append("durationSeconds", String(result.durationSeconds)); fd.append("pitchMeanHz", String(result.pitchMeanHz));
@@ -527,7 +539,13 @@ function App() {
             : "Analysis complete. Saving your result...");
           const saved = await uploadRecording(blob, result);
           const merged = { ...result, ...(saved.analysis || {}) }; setAnalysis(merged);
-          if (!result.noVoiceDetected) setMessage(`Saved successfully. Difficulty: Level ${saved.difficulty?.current ?? "—"}.`);
+          if (!result.noVoiceDetected) {
+            setMessage(
+              saved.newExercisesGenerated
+                ? `Saved successfully. Difficulty: Level ${saved.difficulty?.current ?? "—"}. New exercises were added for you.`
+                : `Saved successfully. Difficulty: Level ${saved.difficulty?.current ?? "—"}.`
+            );
+          }
           await loadPatientDashboard(user.id);
         } catch (err) { setMessage(err.message || "Audio analysis/upload failed."); }
         finally { setUploading(false); }
@@ -587,7 +605,19 @@ function App() {
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${avgScore}%`} subtitle="Across all sessions" />
           </div>
 
-          <Section title="Your home exercises" subtitle="Complete your assigned exercises, then record your speech practice below.">
+          <Section
+            title="Your home exercises"
+            subtitle="Complete your assigned exercises, then record your speech practice below. New ones are generated for you automatically as you progress."
+            right={
+              <Button
+                secondary
+                disabled={loading}
+                onClick={() => generateExercises(user.id, () => loadPatientDashboard(user.id))}
+              >
+                ✨ Get new exercises
+              </Button>
+            }
+          >
             {exercises.length === 0 ? <Empty text="No exercises assigned yet — check back soon." /> : exercises.map((a) => <ExerciseCard key={a.id} assignment={a} />)}
           </Section>
 
@@ -658,7 +688,22 @@ function App() {
             </div>
           </Section>
 
-          <Section title="Assigned exercises" subtitle="Exercises currently assigned to this patient." right={<Button secondary onClick={() => loadPatientDetail(selectedPatient)}>Refresh</Button>}>
+          <Section
+            title="Assigned exercises"
+            subtitle="Exercises currently assigned to this patient."
+            right={
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <Button
+                  secondary
+                  disabled={loading}
+                  onClick={() => generateExercises(selectedPatient.id, () => loadPatientDetail(selectedPatient))}
+                >
+                  ✨ Generate more
+                </Button>
+                <Button secondary onClick={() => loadPatientDetail(selectedPatient)}>Refresh</Button>
+              </div>
+            }
+          >
             {loading && !patientDetail ? <p>Loading…</p> : exercises.length ? exercises.map((a) => <ExerciseCard key={a.id} assignment={a} therapist />) : <Empty text="No exercises assigned." />}
           </Section>
 
@@ -818,6 +863,18 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
           </div>
 
           <div style={{ textAlign: "center", marginTop: 26 }}>
+          <img
+  src="/swarsaathi logo.png"
+  alt="Swar Saathi"
+  style={{
+    width: "220px",
+    maxWidth: "85%",
+    height: "auto",
+    display: "block",
+    margin: "0 auto 22px",
+    objectFit: "contain",
+  }}
+/>
             <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25 }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
             <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
           </div>
