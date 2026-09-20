@@ -1136,10 +1136,11 @@ function Header({ title, user, logout, back }) {
             alt="Swar Saathi"
             style={{
               width: "220px",
+              height: "110px",
               maxWidth: "100%",
-              height: "auto",
               display: "block",
               objectFit: "contain",
+              objectPosition: "left center",
             }}
           />
         </div>
