@@ -1018,7 +1018,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
         <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl }}>
           <div style={{ textAlign: "center" }}>
             <img
-              src="/swarsaathi logo.png"
+              src="/swarsaathi-logo.png"
               alt="Swar Saathi"
               style={{
                 width: "220px",
