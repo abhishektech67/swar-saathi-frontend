@@ -1130,9 +1130,18 @@ function Header({ title, user, logout, back }) {
         {back && (
           <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Logo size={30} />
-          <Wordmark size={20} />
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <img
+            src="/swarsaathi-logo.png"
+            alt="Swar Saathi"
+            style={{
+              width: "220px",
+              maxWidth: "100%",
+              height: "auto",
+              display: "block",
+              objectFit: "contain",
+            }}
+          />
         </div>
         <div style={{ fontWeight: 600, marginTop: 6, color: theme.colors.inkSoft, fontSize: 14 }}>{title} · {user.fullName || user.email || "User"}</div>
       </div>
