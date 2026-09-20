@@ -1008,12 +1008,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
       <GlobalStyle />
       <AuthDecor />
 
-      <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 4px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Logo size={44} />
-          <Wordmark size={22} tagline="Better speech · Brighter futures" />
-        </div>
-        <div style={{ display: "none" }} className="sdb-decor" />
+      <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "8px 4px 0" }}>
         <div style={{ fontSize: 13.5, color: theme.colors.inkSoft, fontWeight: 600, display: "flex", gap: 8 }} className="sdb-decor">
           <span>Support</span><span>·</span><span>Track</span><span>·</span><span>Empower</span>
         </div>
@@ -1022,26 +1017,19 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "40px 0" }}>
         <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl }}>
           <div style={{ textAlign: "center" }}>
-            <div className="sdb-bob" style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-              <Logo size={64} />
-            </div>
-            <Wordmark size={28} />
-            <p style={{ ...styles.muted, margin: "10px 0 0" }}>{mode === "login" ? "Your voice. Our support." : "Start your therapy journey."}</p>
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 26 }}>
-          <img
-  src="/swarsaathi logo.png"
-  alt="Swar Saathi"
-  style={{
-    width: "220px",
-    maxWidth: "85%",
-    height: "auto",
-    display: "block",
-    margin: "0 auto 22px",
-    objectFit: "contain",
-  }}
-/>
+            <img
+              src="/swarsaathi logo.png"
+              alt="Swar Saathi"
+              style={{
+                width: "220px",
+                maxWidth: "85%",
+                height: "auto",
+                display: "block",
+                margin: "0 auto 12px",
+                objectFit: "contain",
+              }}
+            />
+            <p style={{ ...styles.muted, margin: "0 0 22px" }}>{mode === "login" ? "Your voice. Our support." : "Start your therapy journey."}</p>
             <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25, color: theme.colors.navy }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
             <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
           </div>
