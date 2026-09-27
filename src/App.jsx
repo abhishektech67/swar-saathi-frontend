@@ -7,43 +7,100 @@ const API_URL = "https://swar-saathi-backend.onrender.com";
 /* trust and headings, a bright teal for the brand accent, and a warm  */
 /* coral for energy/encouragement, echoed in the logomark.             */
 /* ------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------- */
+/* WARM WELLNESS — calm, human, premium therapy-platform palette: deep    */
+/* navy for trust, soft mint for progress, soft coral used sparingly for  */
+/* CTAs, on a warm cream canvas. Soft diffused shadows and light borders  */
+/* replace the old hard "sticker" offsets. Token names are kept the same */
+/* so every component below (Button, Section, ScoreCard, etc.) restyles  */
+/* automatically.                                                        */
+/* ---------------------------------------------------------------------- */
 const theme = {
   colors: {
-    canvas: "#EEF6F2",
+    canvas: "#FFFBF5",      // Warm off-white / cream
     surface: "#FFFFFF",
-    surfaceAlt: "#F2F8F5",
-    navy: "#16283F",
-    navyDark: "#0E1B2C",
-    ink: "#16283F",
-    inkSoft: "#5B6B78",
-    inkFaint: "#93A2AC",
-    line: "#DCE7E1",
-    lineSoft: "#E9F1ED",
-    teal: "#149C81",
-    tealDark: "#0D7A65",
-    tealSoft: "#E0F3ED",
-    coral: "#FF7A52",
-    coralDark: "#DB5A32",
-    coralSoft: "#FFE6DA",
-    gold: "#DE9F2E",
-    goldSoft: "#FBEBCF",
-    danger: "#C6483C",
-    dangerSoft: "#FBE7E4",
-    success: "#1E9D74",
+    surfaceAlt: "#F6F1E7",  // Soft beige
+    navy: "#1E293B",        // Deep navy — primary, typography & structure
+    navyDark: "#14202F",
+    ink: "#1E293B",
+    inkSoft: "#6B7280",     // Muted warm gray
+    inkFaint: "#9CA3AF",
+    line: "#E7DFD0",        // Soft warm border, not chunky dark ink
+    lineSoft: "#EFE8DA",
+    accent: "#FF7A59",      // Soft coral — used sparingly, primary CTA
+    accentSoft: "#FFE7DE",
+    teal: "#34D399",        // Soft mint green — secondary, recovery/progress
+    tealDark: "#0F9D6E",
+    tealSoft: "#E4F9EF",    // Very pale mint
+    coral: "#FF7A59",       // Soft coral (kept as its own token for reuse)
+    coralDark: "#C75A3D",
+    coralSoft: "#FFE7DE",
+    gold: "#F2B441",        // Warm supporting amber, used lightly
+    goldSoft: "#FBF0DC",
+    danger: "#E4574C",
+    dangerSoft: "#FBE6E3",
+    success: "#10B981",
   },
-  radius: { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 },
-  shadow: "0 18px 40px -18px rgba(14,27,44,.35)",
-  shadowSoft: "0 6px 18px -8px rgba(14,27,44,.18)",
+  radius: { sm: 10, md: 18, lg: 26, xl: 32, pill: 999 },
+  border: "1.5px",
+  // Soft, diffused shadows — calm and premium rather than a hard offset.
+  shadow: "0 10px 30px rgba(30,41,59,0.10)",
+  shadowSoft: "0 6px 20px rgba(30,41,59,0.07)",
+  shadowHover: "0 16px 34px rgba(30,41,59,0.14)",
+  shadowActive: "0 4px 12px rgba(30,41,59,0.10)",
+  ease: "cubic-bezier(0.22, 1, 0.36, 1)", // smooth, gentle settle — no overshoot
   font: {
-    display: '"Fraunces", Georgia, "Times New Roman", serif',
-    body: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    display: '"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif',
+    body: '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
   },
 };
+
+/* ---------------------------------------------------------------------- */
+/* HERO PALETTE — a separate, deliberately darker set used only by the    */
+/* marketing homepage hero: deep forest green, three desaturated card     */
+/* tones (sage / slate-teal / rust), cream type, and a sandy illustration */
+/* accent set. Kept apart from the main `theme` so the rest of the app    */
+/* (dashboards, forms) stays on the light warm palette.                   */
+/* ---------------------------------------------------------------------- */
+const hero = {
+  bg: "#2C4A3E",
+  bgDeep: "#233C32",
+  cream: "#F5F1E8",
+  sage: "#5C7A63",
+  sageDark: "#465F4C",
+  slate: "#4E6B72",
+  slateDark: "#3B535A",
+  rust: "#B4531A",
+  rustDark: "#8C4014",
+  butter: "#E8B94E",
+  dustySage: "#93AA8C",
+  paleBlue: "#AECBCB",
+  ink: "#1B1B18",
+};
+
+// Subtle fractal-noise data URI — gives cards/hero a faint grain instead of
+// a flat vector fill, echoing the retro-textured illustration look.
+const GRAIN_URI =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
+
+function Grain({ opacity = 0.07 }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute", inset: 0, backgroundImage: `url("${GRAIN_URI}")`,
+        opacity, mixBlendMode: "overlay", pointerEvents: "none",
+      }}
+    />
+  );
+}
 
 const styles = {
   page: {
     minHeight: "100vh",
     background: theme.colors.canvas,
+    backgroundImage: `radial-gradient(${theme.colors.lineSoft} 1.5px, transparent 1.5px)`,
+    backgroundSize: "22px 22px",
     color: theme.colors.ink,
     fontFamily: theme.font.body,
     padding: "28px 20px 60px",
@@ -51,7 +108,7 @@ const styles = {
   wrap: { maxWidth: 1180, margin: "0 auto" },
   card: {
     background: theme.colors.surface,
-    border: `1px solid ${theme.colors.lineSoft}`,
+    border: `1.5px solid ${theme.colors.lineSoft}`,
     borderRadius: theme.radius.lg,
     padding: 24,
     boxShadow: theme.shadowSoft,
@@ -63,35 +120,48 @@ const styles = {
 function GlobalStyle() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440;9..144,560;9..144,650&family=Inter:wght@400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
       .sdb * { box-sizing: border-box; }
       .sdb button, .sdb input, .sdb select, .sdb textarea, .sdb table { font-family: ${theme.font.body}; }
-      .sdb input[type="checkbox"] { accent-color: ${theme.colors.teal}; width: 17px; height: 17px; }
+      .sdb input[type="checkbox"] { accent-color: ${theme.colors.accent}; width: 17px; height: 17px; }
       @keyframes sdb-pulse-ring {
-        0% { box-shadow: 0 0 0 0 rgba(255,122,82,.42); }
-        70% { box-shadow: 0 0 0 18px rgba(255,122,82,0); }
-        100% { box-shadow: 0 0 0 0 rgba(255,122,82,0); }
+        0% { box-shadow: 0 0 0 0 rgba(255,122,89,.35); }
+        70% { box-shadow: 0 0 0 18px rgba(255,122,89,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,122,89,0); }
       }
-      @keyframes sdb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-      @keyframes sdb-pop { 0% { transform: scale(0.85); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes sdb-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-5px) rotate(-2deg); } }
+      @keyframes sdb-pop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes sdb-wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } }
       .sdb-recording { animation: sdb-pulse-ring 1.7s ease-out infinite; }
-      .sdb-bob { animation: sdb-bob 3.2s ease-in-out infinite; }
-      .sdb-pop { animation: sdb-pop .35s ease-out; }
-      .sdb button:focus-visible, .sdb a:focus-visible, .sdb input:focus-visible, .sdb select:focus-visible, .sdb textarea:focus-visible {
-        outline: 3px solid ${theme.colors.gold};
+      .sdb-bob { animation: sdb-bob 2.6s ${theme.ease} infinite; }
+      .sdb-pop { animation: sdb-pop .4s ${theme.ease}; }
+      .sdb-hover-lift:hover .sdb-wiggle-icon { animation: sdb-wiggle .5s ${theme.ease}; }
+      .sdb button:focus-visible, .sdb a:focus-visible, .sdb select:focus-visible {
+        outline: 3px solid ${theme.colors.accent};
         outline-offset: 2px;
       }
-      .sdb-hover-lift { transition: transform .15s ease, box-shadow .15s ease; }
-      .sdb-hover-lift:hover { transform: translateY(-2px); box-shadow: ${theme.shadow}; }
+      .sdb input:focus-visible, .sdb textarea:focus-visible {
+        outline: none;
+        border-color: ${theme.colors.accent} !important;
+        box-shadow: 0 0 0 3px ${theme.colors.accentSoft};
+      }
+      .sdb-hover-lift { transition: transform .2s ${theme.ease}, box-shadow .2s ${theme.ease}; }
+      .sdb-card-lift { transition: transform .25s ${theme.ease}, box-shadow .25s ${theme.ease}; }
+      .sdb-card-lift:hover { transform: translateY(-3px); box-shadow: ${theme.shadowHover}; }
       .sdb-decor { pointer-events: none; }
       @media (max-width: 860px) { .sdb-decor { display: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        .sdb-bob, .sdb-recording, .sdb-pop, .sdb-hover-lift:hover .sdb-wiggle-icon { animation: none !important; }
+        .sdb-hover-lift, .sdb-card-lift { transition: none !important; }
+        .sdb-card-lift:hover { transform: none; }
+      }
       ::selection { background: ${theme.colors.coralSoft}; }
     `}</style>
   );
 }
 
 /* ---------------------------- Icons -------------------------------- */
-const iconProps = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+const iconProps = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" };
 function IconMail(props) { return <svg {...iconProps} width={18} height={18} {...props}><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M4 7l8 6 8-6" /></svg>; }
 function IconLock(props) { return <svg {...iconProps} width={18} height={18} {...props}><rect x="5" y="11" width="14" height="9" rx="2.5" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>; }
 function IconEye(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>; }
@@ -171,38 +241,48 @@ function blobStyle(extra) {
 function AuthDecor() {
   return (
     <div className="sdb-decor" style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
-      <div style={blobStyle({ top: -70, left: -90, width: 260, height: 260, background: theme.colors.tealSoft, borderRadius: "62% 38% 55% 45% / 55% 45% 55% 45%" })} />
-      <div style={blobStyle({ top: -60, right: -80, width: 220, height: 220, background: theme.colors.coralSoft, borderRadius: "40% 60% 65% 35% / 45% 55% 45% 55%" })} />
-      <div style={blobStyle({ bottom: -100, left: -60, width: 300, height: 300, background: theme.colors.tealSoft, borderRadius: "48% 52% 40% 60% / 55% 45% 55% 45%", opacity: 0.7 })} />
-      <div style={blobStyle({ bottom: -120, right: -110, width: 340, height: 340, background: theme.colors.coralSoft, borderRadius: "55% 45% 60% 40% / 45% 55% 45% 55%", opacity: 0.75 })} />
-      <div style={blobStyle({ top: "38%", left: 40, opacity: 0.9 })}><Waveform height={70} bars={7} /></div>
-      <div style={blobStyle({ bottom: 60, right: 30, opacity: 0.9 })}><SoundHead size={190} /></div>
-      <div style={blobStyle({ bottom: 40, left: 60, opacity: 0.9 })}><LeafAccent size={80} /></div>
+      <div style={blobStyle({ top: -70, left: -90, width: 220, height: 220, background: theme.colors.goldSoft, borderRadius: "50%" })} />
+      <div style={blobStyle({ top: -50, right: -70, width: 180, height: 180, background: theme.colors.coralSoft, borderRadius: "42% 58% 61% 39% / 47% 42% 58% 53%" })} />
+      <div style={blobStyle({ bottom: -90, left: -50, width: 260, height: 260, background: theme.colors.tealSoft, borderRadius: "50%", opacity: 0.85 })} />
+      <div style={blobStyle({ bottom: -110, right: -90, width: 200, height: 200, background: theme.colors.surfaceAlt, borderRadius: "38% 62% 55% 45% / 45% 40% 60% 55%", opacity: 0.85 })} />
+      <div style={blobStyle({ top: "36%", left: 36, opacity: 0.85 })}><Waveform height={70} bars={7} color={theme.colors.accent} /></div>
+      <div style={blobStyle({ bottom: 70, right: 26, opacity: 0.85 })}><SoundHead size={170} /></div>
+      <div style={blobStyle({ bottom: 40, left: 60, opacity: 0.85 })}><LeafAccent size={70} /></div>
     </div>
   );
 }
 
 /* ------------------------------- UI kit -------------------------------- */
 function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button", full = false, icon, small = false }) {
-  const bg = danger ? theme.colors.danger : secondary ? theme.colors.surface : theme.colors.navy;
+  const bg = danger ? theme.colors.danger : secondary ? "transparent" : theme.colors.accent;
   const color = secondary ? theme.colors.ink : "#fff";
+  const [hover, setHover] = useState(false);
+  const [active, setActive] = useState(false);
+  const shadow = disabled ? "none" : active ? theme.shadowActive : hover ? theme.shadowHover : theme.shadowSoft;
+  const translate = disabled ? "none" : active ? "translateY(0px)" : hover ? "translateY(-2px)" : "translateY(0)";
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setActive(false); }}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
       className="sdb-hover-lift"
       style={{
-        border: secondary ? `1.5px solid ${theme.colors.line}` : "0",
-        borderRadius: theme.radius.sm,
-        padding: small ? "8px 14px" : "12px 20px",
+        border: secondary ? `1.5px solid ${theme.colors.line}` : "1.5px solid transparent",
+        borderRadius: theme.radius.pill,
+        padding: small ? "8px 16px" : "12px 22px",
         cursor: disabled ? "not-allowed" : "pointer",
         fontWeight: 700,
         fontSize: small ? 13 : 14.5,
-        background: bg,
+        fontFamily: theme.font.display,
+        background: secondary && hover && !disabled ? theme.colors.surfaceAlt : bg,
         color,
         opacity: disabled ? 0.55 : 1,
-        boxShadow: disabled || secondary ? "none" : theme.shadowSoft,
+        boxShadow: secondary ? "none" : shadow,
+        transform: secondary ? "none" : translate,
         width: full ? "100%" : "auto",
         display: "inline-flex",
         alignItems: "center",
@@ -218,10 +298,10 @@ function Button({ children, onClick, secondary = false, disabled = false, danger
 
 function Section({ title, subtitle, children, right }) {
   return (
-    <section style={{ ...styles.card, marginBottom: 18 }}>
+    <section style={{ ...styles.card, marginBottom: 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 18 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 21, fontFamily: theme.font.display, fontWeight: 650 }}>{title}</h2>
+          <h2 style={{ margin: 0, fontSize: 21, fontFamily: theme.font.display, fontWeight: 800 }}>{title}</h2>
           {subtitle && <p style={{ ...styles.muted, margin: "7px 0 0", lineHeight: 1.55, maxWidth: 640 }}>{subtitle}</p>}
         </div>
         {right}
@@ -232,18 +312,22 @@ function Section({ title, subtitle, children, right }) {
 }
 
 const accentSets = {
-  teal: { fg: theme.colors.teal, bg: theme.colors.tealSoft },
+  teal: { fg: theme.colors.tealDark, bg: theme.colors.tealSoft },
   coral: { fg: theme.colors.coralDark, bg: theme.colors.coralSoft },
-  gold: { fg: "#8A5E12", bg: theme.colors.goldSoft },
+  gold: { fg: "#92620A", bg: theme.colors.goldSoft },
+  violet: { fg: theme.colors.accent, bg: theme.colors.accentSoft },
 };
 
 function ScoreCard({ icon, title, value, subtitle, accent = "teal" }) {
   const a = accentSets[accent] || accentSets.teal;
   return (
-    <div style={{ ...styles.card, padding: 18, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: a.fg }} />
-      <div style={{ width: 34, height: 34, borderRadius: 10, background: a.bg, color: a.fg, display: "grid", placeItems: "center", fontSize: 16, marginBottom: 10 }}>{icon}</div>
-      <div style={{ color: theme.colors.inkSoft, fontSize: 13, fontWeight: 600 }}>{title}</div>
+    <div className="sdb-card-lift" style={{ ...styles.card, padding: "24px 18px 18px", position: "relative", overflow: "visible" }}>
+      <div style={{
+        position: "absolute", top: -18, left: 18, width: 40, height: 40, borderRadius: "50%",
+        background: a.bg, color: a.fg, border: `1.5px solid ${theme.colors.surface}`, boxShadow: theme.shadowSoft,
+        display: "grid", placeItems: "center", fontSize: 17,
+      }}>{icon}</div>
+      <div style={{ color: theme.colors.inkSoft, fontSize: 13, fontWeight: 700, marginTop: 8 }}>{title}</div>
       <div style={{ fontSize: 29, fontWeight: 800, marginTop: 4, fontFamily: theme.font.display }}>{value}</div>
       {subtitle && <div style={{ ...styles.muted, fontSize: 12.5, marginTop: 5 }}>{subtitle}</div>}
     </div>
@@ -320,10 +404,10 @@ function computeBadges(totalPoints, longestStreak) {
 function GamificationPanel({ totalPoints = 0, currentStreak = 0, longestStreak = 0 }) {
   const badges = computeBadges(totalPoints, longestStreak);
   return (
-    <div style={{ ...styles.card, marginBottom: 18, background: theme.colors.navy, color: "#fff", border: "none" }}>
+    <div style={{ ...styles.card, marginBottom: 22, background: theme.colors.navy, color: "#fff", border: "none", boxShadow: theme.shadow }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 12, background: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", fontSize: 22 }}>🏆</div>
+          <div style={{ width: 46, height: 46, borderRadius: "50%", background: theme.colors.accent, display: "grid", placeItems: "center", fontSize: 22 }}>🏆</div>
           <div>
             <div style={{ fontFamily: theme.font.display, fontSize: 20, fontWeight: 650 }}>{totalPoints} points</div>
             <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
@@ -501,6 +585,11 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Logged-out visitors see the marketing home page first, then land on
+  // the auth screen already set to the mode/role they picked there.
+  const [publicView, setPublicView] = useState("home"); // "home" | "auth"
+  const [authIntent, setAuthIntent] = useState({ mode: "login", role: "PATIENT" });
 
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -718,7 +807,26 @@ function App() {
   }, [patientLogs]);
 
   if (!user) {
-    return <AuthScreen onLogin={handleLogin} onRegister={handleRegister} loading={loading} message={message} notify={setMessage} />;
+    if (publicView === "home") {
+      return (
+        <HomePage
+          onGetStarted={(role) => { setAuthIntent({ mode: "signup", role: role || "PATIENT" }); setPublicView("auth"); }}
+          onLogin={() => { setAuthIntent({ mode: "login", role: "PATIENT" }); setPublicView("auth"); }}
+        />
+      );
+    }
+    return (
+      <AuthScreen
+        onBack={() => setPublicView("home")}
+        initialMode={authIntent.mode}
+        initialRole={authIntent.role}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        loading={loading}
+        message={message}
+        notify={setMessage}
+      />
+    );
   }
 
   if (user.role === "PATIENT") {
@@ -957,11 +1065,13 @@ const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
   padding: "13px 14px 13px 42px",
-  border: `1.5px solid ${theme.colors.line}`,
-  borderRadius: theme.radius.sm,
+  border: `2px solid ${theme.colors.lineSoft}`,
+  borderRadius: theme.radius.md,
   fontSize: 15,
   background: theme.colors.surface,
   color: theme.colors.ink,
+  outline: "none",
+  transition: `border-color .15s ${theme.ease}, box-shadow .15s ${theme.ease}`,
 };
 
 function InputField({ icon, rightSlot, ...inputProps }) {
@@ -974,8 +1084,172 @@ function InputField({ icon, rightSlot, ...inputProps }) {
   );
 }
 
-function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
-  const [mode, setMode] = useState("login");
+/* ---------------------------- Home / marketing page -------------------- */
+const ROLE_CARDS = [
+  {
+    role: "PATIENT",
+    label: "Patient",
+    tagline: "For me",
+    card: hero.sage,
+    cardDark: hero.sageDark,
+    icon: "🗣️",
+    desc: "Practice exercises, record your voice, and watch your progress grow.",
+  },
+  {
+    role: "THERAPIST",
+    label: "Therapist",
+    tagline: "For my patients",
+    card: hero.slate,
+    cardDark: hero.slateDark,
+    icon: "🩺",
+    desc: "Assign exercises, review acoustic analytics, and adjust care plans.",
+  },
+  {
+    role: "CAREGIVER",
+    label: "Caregiver",
+    tagline: "For someone I care for",
+    card: hero.rust,
+    cardDark: hero.rustDark,
+    icon: "💛",
+    desc: "Follow along with therapy notes and send updates to the care team.",
+  },
+];
+
+function NavPill({ children, ...rest }) {
+  return (
+    <span {...rest} style={{ background: "rgba(245,241,232,0.1)", color: hero.cream, border: `1.5px solid rgba(245,241,232,0.35)`, borderRadius: 99, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+      {children}
+    </span>
+  );
+}
+
+function HomeRoleCard({ card, onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={() => onClick(card.role)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        textAlign: "left",
+        cursor: "pointer",
+        border: "none",
+        borderRadius: theme.radius.lg,
+        padding: 28,
+        background: card.card,
+        boxShadow: hover ? `0 18px 34px rgba(0,0,0,0.28)` : `0 10px 22px rgba(0,0,0,0.20)`,
+        transform: hover ? "translateY(-4px)" : "translateY(0)",
+        transition: `transform .25s ${theme.ease}, box-shadow .25s ${theme.ease}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        minHeight: 220,
+      }}
+    >
+      <Grain opacity={0.08} />
+      <div style={{ position: "relative", width: 52, height: 52, borderRadius: "50%", background: hero.cream, border: `1.5px solid ${hero.ink}`, display: "grid", placeItems: "center", fontSize: 24 }}>
+        {card.icon}
+      </div>
+      <div style={{ position: "relative" }}>
+        <h3 style={{ margin: 0, fontFamily: theme.font.display, fontSize: 24, fontWeight: 800, color: hero.cream }}>{card.label}</h3>
+        <p style={{ margin: "10px 0 0", color: hero.cream, opacity: 0.88, lineHeight: 1.5, fontSize: 14 }}>{card.desc}</p>
+      </div>
+      <div style={{ position: "relative", marginTop: "auto", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14, color: hero.cream }}>
+        {card.tagline} <IconArrowRight />
+      </div>
+    </button>
+  );
+}
+
+function HomePage({ onGetStarted, onLogin }) {
+  return (
+    <div className="sdb" style={{ padding: 0, background: theme.colors.canvas }}>
+      <GlobalStyle />
+
+      {/* Nav + Hero share the forest-green field */}
+      <div style={{ position: "relative", overflow: "hidden", background: hero.bg }}>
+        <Grain opacity={0.05} />
+        {/* sandy illustration-accent shapes */}
+        <div className="sdb-decor" style={{ position: "absolute", top: -70, right: -60, width: 260, height: 260, borderRadius: "50%", background: hero.butter, opacity: 0.14 }} />
+        <div className="sdb-decor" style={{ position: "absolute", top: "34%", left: -80, width: 220, height: 220, borderRadius: "50%", background: hero.paleBlue, opacity: 0.12 }} />
+        <div className="sdb-decor" style={{ position: "absolute", bottom: 40, right: "12%", width: 160, height: 160, borderRadius: "42% 58% 60% 40% / 48% 42% 58% 52%", background: hero.dustySage, opacity: 0.14 }} />
+
+        {/* Nav */}
+        <div style={{ position: "relative", zIndex: 1, borderBottom: "1px solid rgba(245,241,232,0.14)" }}>
+          <div style={{ ...styles.wrap, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px" }}>
+            <div style={{ fontFamily: theme.font.display, fontWeight: 700, fontSize: 22, color: hero.cream }}>
+              Swar <span style={{ color: hero.butter }}>Saathi</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div className="sdb-decor" style={{ display: "flex", gap: 8, marginRight: 8 }}>
+                <NavPill>Support</NavPill>
+                <NavPill>Track</NavPill>
+                <NavPill>Empower</NavPill>
+              </div>
+              <button
+                onClick={onLogin}
+                className="sdb-hover-lift"
+                style={{ background: "transparent", color: hero.cream, border: `1.5px solid rgba(245,241,232,0.5)`, borderRadius: 999, padding: "11px 22px", fontFamily: theme.font.display, fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}
+              >
+                Log in
+              </button>
+              <button
+                onClick={() => onGetStarted("PATIENT")}
+                className="sdb-hover-lift"
+                style={{ background: hero.cream, color: hero.ink, border: "1.5px solid transparent", borderRadius: 999, padding: "11px 22px", fontFamily: theme.font.display, fontWeight: 700, fontSize: 14.5, cursor: "pointer", boxShadow: "0 8px 20px rgba(0,0,0,0.22)" }}
+              >
+                Get started
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero copy + role cards */}
+        <div style={{ position: "relative", zIndex: 1, padding: "72px 20px 120px" }}>
+          <div style={{ ...styles.wrap, textAlign: "center" }}>
+            <h1 style={{ fontFamily: theme.font.display, fontWeight: 800, fontSize: "clamp(34px,6vw,56px)", margin: "0 0 18px", color: hero.cream, lineHeight: 1.1 }}>
+              Every voice deserves<br />to be heard.
+            </h1>
+            <p style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 32px", lineHeight: 1.6, color: hero.cream, opacity: 0.82 }}>
+              Swar Saathi helps NGOs, therapists, patients and families manage speech therapy end to end — recordings, exercises, progress, and caregiver updates, all in one place.
+            </p>
+            <div style={{ fontWeight: 700, fontSize: 15, color: hero.cream, marginBottom: 24 }}>Who are you signing up as?</div>
+          </div>
+
+          <div style={{ ...styles.wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
+            {ROLE_CARDS.map((c) => (
+              <HomeRoleCard key={c.role} card={c} onClick={onGetStarted} />
+            ))}
+          </div>
+        </div>
+
+        {/* Cream wave cutting into the green, revealing white below */}
+        <svg
+          viewBox="0 0 1440 110" preserveAspectRatio="none" aria-hidden="true"
+          style={{ position: "relative", zIndex: 1, display: "block", width: "100%", height: 90, marginTop: -2 }}
+        >
+          <path d="M0,64 C240,110 480,10 720,32 C960,54 1200,104 1440,56 L1440,110 L0,110 Z" fill={theme.colors.canvas} />
+        </svg>
+      </div>
+
+      {/* Feature strip — plain light section below the wave */}
+      <div style={{ background: "#FFFFFF" }}>
+        <div style={{ ...styles.wrap, padding: "10px 20px 64px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
+            <ScoreCard icon="🎙️" accent="violet" title="Record & analyze" value="Instant" subtitle="Pronunciation & pitch feedback in the browser" />
+            <ScoreCard icon="🎮" accent="coral" title="Home exercises" value="Gamified" subtitle="Points, streaks and badges keep patients engaged" />
+            <ScoreCard icon="📊" accent="gold" title="Progress tracking" value="Visual" subtitle="Dashboards for therapists, patients and caregivers" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, initialMode = "login", initialRole = "PATIENT" }) {
+  const [mode, setMode] = useState(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
 
@@ -986,7 +1260,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("PATIENT");
+  const [role, setRole] = useState(initialRole);
   const [dateOfBirth, setDateOfBirth] = useState("");
 
   const switchMode = (next) => { setMode(next); notify(""); setShowPassword(false); };
@@ -1008,14 +1282,21 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify }) {
       <GlobalStyle />
       <AuthDecor />
 
-      <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "8px 4px 0" }}>
-        <div style={{ fontSize: 13.5, color: theme.colors.inkSoft, fontWeight: 600, display: "flex", gap: 8 }} className="sdb-decor">
-          <span>Support</span><span>·</span><span>Track</span><span>·</span><span>Empower</span>
+      <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 4px 0" }}>
+        {onBack ? (
+          <button onClick={onBack} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, color: theme.colors.ink, fontWeight: 700, fontSize: 13.5, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ transform: "rotate(180deg)", display: "inline-flex" }}><IconArrowRight /></span> Back to home
+          </button>
+        ) : <span />}
+        <div style={{ fontSize: 13, fontWeight: 700, display: "flex", gap: 10 }} className="sdb-decor">
+          <span style={{ background: theme.colors.accentSoft, color: theme.colors.coralDark, borderRadius: 99, padding: "5px 14px" }}>Support</span>
+          <span style={{ background: theme.colors.tealSoft, color: theme.colors.tealDark, borderRadius: 99, padding: "5px 14px" }}>Track</span>
+          <span style={{ background: theme.colors.goldSoft, color: "#8A5E12", borderRadius: 99, padding: "5px 14px" }}>Empower</span>
         </div>
       </div>
 
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "40px 0" }}>
-        <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl }}>
+        <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl, boxShadow: theme.shadow }}>
           <div style={{ textAlign: "center" }}>
             <img
               src="/swarsaathi-logo.png"
@@ -1135,8 +1416,8 @@ function Header({ title, user, logout, back }) {
             src="/swarsaathi-logo.png"
             alt="Swar Saathi"
             style={{
-              width: "220px",
-              height: "110px",
+              width: "180px",
+              height: "90px",
               maxWidth: "100%",
               display: "block",
               objectFit: "contain",
@@ -1153,7 +1434,7 @@ function Header({ title, user, logout, back }) {
 
 function Notice({ text }) {
   return (
-    <div style={{ background: theme.colors.goldSoft, border: `1px solid ${theme.colors.gold}55`, borderRadius: theme.radius.sm, padding: 13, marginBottom: 18, marginTop: 4, color: "#6B4A0E" }}>{text}</div>
+    <div style={{ background: theme.colors.goldSoft, borderRadius: theme.radius.md, padding: "13px 16px", marginBottom: 18, marginTop: 4, color: "#7A540F", fontWeight: 600, borderLeft: `3px solid ${theme.colors.gold}` }}>{text}</div>
   );
 }
 function Empty({ text }) {
@@ -1172,7 +1453,7 @@ function ExerciseCard({ assignment, therapist, onComplete, completing }) {
   const e = assignment.exercise || {};
   const done = Boolean(assignment.isCompleted);
   return (
-    <div style={{ padding: 18, border: `1px solid ${done ? theme.colors.success : theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12, background: done ? theme.colors.tealSoft : "transparent" }}>
+    <div style={{ padding: 18, border: `2px solid ${done ? theme.colors.tealDark : theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12, background: done ? theme.colors.tealSoft : "transparent" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 600, fontSize: 17 }}>{e.title || "Exercise"}</h3>
@@ -1240,7 +1521,7 @@ function ProgressTable({ logs }) {
 const th = { textAlign: "left", padding: "10px 8px", borderBottom: `2px solid ${theme.colors.lineSoft}`, fontSize: 12, color: theme.colors.inkSoft, fontWeight: 700 };
 const td = { padding: "11px 8px", borderBottom: `1px solid ${theme.colors.lineSoft}`, fontSize: 13.5 };
 
-const avatarPalette = [theme.colors.teal, theme.colors.coral, theme.colors.gold, theme.colors.navy];
+const avatarPalette = [theme.colors.accent, theme.colors.coral, theme.colors.gold, theme.colors.tealDark];
 function avatarColor(seed) {
   const s = String(seed || "");
   let sum = 0;
@@ -1251,7 +1532,7 @@ function avatarColor(seed) {
 function PatientRow({ patient, onOpen }) {
   const score = Number(patient.latestPronunciationScore || 0);
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, padding: 16, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 11, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, padding: 16, border: `2px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 11, flexWrap: "wrap" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
         <div style={{ width: 46, height: 46, borderRadius: "50%", background: avatarColor(patient.fullName || patient.id), color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontFamily: theme.font.display }}>{patient.fullName?.[0]?.toUpperCase() || "P"}</div>
         <div>
