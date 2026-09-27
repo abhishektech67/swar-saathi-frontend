@@ -150,13 +150,161 @@ function GlobalStyle() {
       .sdb-card-lift:hover { transform: translateY(-3px); box-shadow: ${theme.shadowHover}; }
       .sdb-decor { pointer-events: none; }
       @media (max-width: 860px) { .sdb-decor { display: none; } }
+
+      /* ---- Entrance choreography: one staggered reveal per screen ---- */
+      @keyframes sdb-rise {
+        from { opacity: 0; transform: translateY(14px) scale(0.99); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .sdb-enter {
+        opacity: 0;
+        animation: sdb-rise .6s ${theme.ease} forwards;
+        animation-delay: calc(var(--sdb-i, 0) * 70ms);
+      }
+
+      /* ---- Hero headline: one gentle gradient sweep on load, not a loop ---- */
+      @keyframes sdb-shine {
+        from { background-position: 200% 0; }
+        to { background-position: -20% 0; }
+      }
+      .sdb-shine-text {
+        background-image: linear-gradient(100deg, ${hero.cream} 40%, ${hero.butter} 50%, ${hero.cream} 60%);
+        background-size: 260% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: sdb-shine 2.4s ${theme.ease} .3s 1 both;
+      }
+
+      /* ---- Button ripple: answers the click, doesn't loop ---- */
+      @keyframes sdb-ripple {
+        from { transform: scale(0); opacity: .45; }
+        to { transform: scale(1); opacity: 0; }
+      }
+      .sdb-ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: currentColor;
+        pointer-events: none;
+        animation: sdb-ripple .55s ${theme.ease} forwards;
+      }
+
+      /* ---- Reward burst on completing an exercise ---- */
+      @keyframes sdb-confetti-fall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(70px) rotate(220deg); opacity: 0; }
+      }
+      .sdb-confetti-piece { position: absolute; animation: sdb-confetti-fall .9s ${theme.ease} forwards; }
+
+      @keyframes sdb-check-draw {
+        from { stroke-dashoffset: 24; }
+        to { stroke-dashoffset: 0; }
+      }
+      .sdb-check-draw path { stroke-dasharray: 24; animation: sdb-check-draw .35s ${theme.ease} forwards; }
+
+      @keyframes sdb-count-glow {
+        0% { text-shadow: 0 0 0 rgba(255,122,89,0); }
+        40% { text-shadow: 0 0 14px rgba(255,122,89,.35); }
+        100% { text-shadow: 0 0 0 rgba(255,122,89,0); }
+      }
+      .sdb-count-glow { animation: sdb-count-glow .7s ${theme.ease}; }
+
       @media (prefers-reduced-motion: reduce) {
-        .sdb-bob, .sdb-recording, .sdb-pop, .sdb-hover-lift:hover .sdb-wiggle-icon { animation: none !important; }
+        .sdb-bob, .sdb-recording, .sdb-pop, .sdb-hover-lift:hover .sdb-wiggle-icon,
+        .sdb-enter, .sdb-shine-text, .sdb-ripple, .sdb-confetti-piece, .sdb-check-draw path, .sdb-count-glow {
+          animation: none !important;
+        }
+        .sdb-enter { opacity: 1; }
+        .sdb-shine-text { -webkit-background-clip: initial; background-clip: initial; color: ${hero.cream}; }
         .sdb-hover-lift, .sdb-card-lift { transition: none !important; }
         .sdb-card-lift:hover { transform: none; }
       }
       ::selection { background: ${theme.colors.coralSoft}; }
     `}</style>
+  );
+}
+
+/* ---------------------- Motion helpers -------------------------------- */
+// Wraps a group of siblings (a stat-card row, a list of rows) so they rise
+// into place together with a small stagger — one orchestrated moment per
+// screen rather than scattered per-element animation.
+function Stagger({ children, as: Tag = "div", style, ...rest }) {
+  const items = Array.isArray(children) ? children : [children];
+  return (
+    <Tag style={style} {...rest}>
+      {items.map((child, i) =>
+        child ? (
+          <div key={child.key ?? i} className="sdb-enter" style={{ "--sdb-i": i }}>
+            {child}
+          </div>
+        ) : null
+      )}
+    </Tag>
+  );
+}
+
+// Counts a numeric value up from its previous value whenever it changes,
+// so stat cards feel alive without looping or distracting once settled.
+function AnimatedNumber({ value, format }) {
+  const numeric = typeof value === "number" ? value : parseFloat(value);
+  const isNumeric = Number.isFinite(numeric);
+  const [display, setDisplay] = useState(isNumeric ? numeric : null);
+  const fromRef = useRef(isNumeric ? numeric : 0);
+  const [pulse, setPulse] = useState(0);
+
+  useEffect(() => {
+    if (!isNumeric) return;
+    const from = fromRef.current;
+    const to = numeric;
+    if (from === to) { setDisplay(to); return; }
+    const duration = 550;
+    const start = performance.now();
+    let raf;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(from + (to - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else { fromRef.current = to; setPulse((p) => p + 1); }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numeric, isNumeric]);
+
+  if (!isNumeric) return <>{value}</>;
+  const rounded = Math.round(display);
+  return <span key={pulse} className={pulse ? "sdb-count-glow" : ""}>{format ? format(rounded) : rounded}</span>;
+}
+
+// A short, celebratory burst of color used right where a positive action
+// just happened (completing an exercise) — motion that answers the click.
+function ConfettiBurst() {
+  const pieces = useMemo(() => {
+    const colors = [theme.colors.coral, theme.colors.teal, theme.colors.gold, theme.colors.tealDark];
+    return Array.from({ length: 10 }).map((_, i) => ({
+      id: i,
+      left: 6 + Math.random() * 88,
+      delay: Math.random() * 120,
+      size: 5 + Math.random() * 4,
+      color: colors[i % colors.length],
+      round: Math.random() > 0.5,
+    }));
+  }, []);
+  return (
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "visible", pointerEvents: "none" }}>
+      {pieces.map((p) => (
+        <span
+          key={p.id}
+          className="sdb-confetti-piece"
+          style={{
+            left: `${p.left}%`, top: "-4px", width: p.size, height: p.size,
+            background: p.color, borderRadius: p.round ? "50%" : 2,
+            animationDelay: `${p.delay}ms`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -238,39 +386,40 @@ function blobStyle(extra) {
   return { position: "absolute", zIndex: 0, ...extra };
 }
 
-function AuthDecor() {
-  return (
-    <div className="sdb-decor" style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
-      <div style={blobStyle({ top: -70, left: -90, width: 220, height: 220, background: theme.colors.goldSoft, borderRadius: "50%" })} />
-      <div style={blobStyle({ top: -50, right: -70, width: 180, height: 180, background: theme.colors.coralSoft, borderRadius: "42% 58% 61% 39% / 47% 42% 58% 53%" })} />
-      <div style={blobStyle({ bottom: -90, left: -50, width: 260, height: 260, background: theme.colors.tealSoft, borderRadius: "50%", opacity: 0.85 })} />
-      <div style={blobStyle({ bottom: -110, right: -90, width: 200, height: 200, background: theme.colors.surfaceAlt, borderRadius: "38% 62% 55% 45% / 45% 40% 60% 55%", opacity: 0.85 })} />
-      <div style={blobStyle({ top: "36%", left: 36, opacity: 0.85 })}><Waveform height={70} bars={7} color={theme.colors.accent} /></div>
-      <div style={blobStyle({ bottom: 70, right: 26, opacity: 0.85 })}><SoundHead size={170} /></div>
-      <div style={blobStyle({ bottom: 40, left: 60, opacity: 0.85 })}><LeafAccent size={70} /></div>
-    </div>
-  );
-}
-
 /* ------------------------------- UI kit -------------------------------- */
 function Button({ children, onClick, secondary = false, disabled = false, danger = false, type = "button", full = false, icon, small = false }) {
   const bg = danger ? theme.colors.danger : secondary ? "transparent" : theme.colors.accent;
   const color = secondary ? theme.colors.ink : "#fff";
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(false);
+  const [ripples, setRipples] = useState([]);
   const shadow = disabled ? "none" : active ? theme.shadowActive : hover ? theme.shadowHover : theme.shadowSoft;
   const translate = disabled ? "none" : active ? "translateY(0px)" : hover ? "translateY(-2px)" : "translateY(0)";
+
+  const handleClick = (e) => {
+    if (!disabled) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.4;
+      const id = Date.now() + Math.random();
+      setRipples((r) => [...r, { id, size, x: e.clientX - rect.left - size / 2, y: e.clientY - rect.top - size / 2 }]);
+      setTimeout(() => setRipples((r) => r.filter((rp) => rp.id !== id)), 600);
+    }
+    onClick?.(e);
+  };
+
   return (
     <button
       type={type}
       disabled={disabled}
-      onClick={onClick}
+      onClick={handleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => { setHover(false); setActive(false); }}
       onMouseDown={() => setActive(true)}
       onMouseUp={() => setActive(false)}
       className="sdb-hover-lift"
       style={{
+        position: "relative",
+        overflow: "hidden",
         border: secondary ? `1.5px solid ${theme.colors.line}` : "1.5px solid transparent",
         borderRadius: theme.radius.pill,
         padding: small ? "8px 16px" : "12px 22px",
@@ -292,17 +441,37 @@ function Button({ children, onClick, secondary = false, disabled = false, danger
     >
       {children}
       {icon}
+      {ripples.map((r) => (
+        <span key={r.id} className="sdb-ripple" style={{ width: r.size, height: r.size, left: r.x, top: r.y, color: secondary ? theme.colors.line : "rgba(255,255,255,.9)" }} />
+      ))}
     </button>
   );
 }
 
-function Section({ title, subtitle, children, right }) {
+const SECTION_TONES = {
+  teal: theme.colors.teal,
+  coral: theme.colors.coral,
+  gold: theme.colors.gold,
+  navy: theme.colors.navy,
+};
+
+function Section({ title, subtitle, children, right, icon, tone = "navy" }) {
+  const barColor = SECTION_TONES[tone] || theme.colors.navy;
   return (
-    <section style={{ ...styles.card, marginBottom: 22 }}>
+    <section style={{ ...styles.card, marginBottom: 22, position: "relative", overflow: "hidden", paddingLeft: 26 }}>
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 5, background: barColor }} />
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 18 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 21, fontFamily: theme.font.display, fontWeight: 800 }}>{title}</h2>
-          {subtitle && <p style={{ ...styles.muted, margin: "7px 0 0", lineHeight: 1.55, maxWidth: 640 }}>{subtitle}</p>}
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+          {icon && (
+            <div style={{
+              width: 38, height: 38, borderRadius: theme.radius.sm, flexShrink: 0,
+              background: `${barColor}1A`, color: barColor, display: "grid", placeItems: "center", fontSize: 17, marginTop: 2,
+            }}>{icon}</div>
+          )}
+          <div>
+            <h2 style={{ margin: 0, fontSize: 21, fontFamily: theme.font.display, fontWeight: 800 }}>{title}</h2>
+            {subtitle && <p style={{ ...styles.muted, margin: "7px 0 0", lineHeight: 1.55, maxWidth: 640 }}>{subtitle}</p>}
+          </div>
         </div>
         {right}
       </div>
@@ -312,24 +481,47 @@ function Section({ title, subtitle, children, right }) {
 }
 
 const accentSets = {
-  teal: { fg: theme.colors.tealDark, bg: theme.colors.tealSoft },
-  coral: { fg: theme.colors.coralDark, bg: theme.colors.coralSoft },
-  gold: { fg: "#92620A", bg: theme.colors.goldSoft },
-  violet: { fg: theme.colors.accent, bg: theme.colors.accentSoft },
+  teal: { fg: theme.colors.tealDark, bg: theme.colors.tealSoft, strong: theme.colors.teal, grad: "linear-gradient(135deg,#E4F9EF 0%,#CBF3E3 100%)" },
+  coral: { fg: theme.colors.coralDark, bg: theme.colors.coralSoft, strong: theme.colors.coral, grad: "linear-gradient(135deg,#FFE7DE 0%,#FFD5C7 100%)" },
+  gold: { fg: "#92620A", bg: theme.colors.goldSoft, strong: theme.colors.gold, grad: "linear-gradient(135deg,#FBF0DC 0%,#F7E2B8 100%)" },
+  violet: { fg: theme.colors.accent, bg: theme.colors.accentSoft, strong: theme.colors.accent, grad: "linear-gradient(135deg,#FFE7DE 0%,#FFD5C7 100%)" },
+  navy: { fg: theme.colors.navy, bg: "#E7EAF0", strong: theme.colors.navy, grad: "linear-gradient(135deg,#EEF1F6 0%,#DEE3EC 100%)" },
 };
+
+function renderScoreValue(value) {
+  if (typeof value === "number") return <AnimatedNumber value={value} />;
+  if (typeof value === "string") {
+    const percentMatch = value.match(/^(-?\d+(?:\.\d+)?)%$/);
+    if (percentMatch) return <><AnimatedNumber value={Number(percentMatch[1])} />%</>;
+    const hzMatch = value.match(/^(-?\d+(?:\.\d+)?)\s?Hz$/);
+    if (hzMatch) return <><AnimatedNumber value={Number(hzMatch[1])} /> Hz</>;
+  }
+  return value;
+}
 
 function ScoreCard({ icon, title, value, subtitle, accent = "teal" }) {
   const a = accentSets[accent] || accentSets.teal;
   return (
-    <div className="sdb-card-lift" style={{ ...styles.card, padding: "24px 18px 18px", position: "relative", overflow: "visible" }}>
-      <div style={{
-        position: "absolute", top: -18, left: 18, width: 40, height: 40, borderRadius: "50%",
-        background: a.bg, color: a.fg, border: `1.5px solid ${theme.colors.surface}`, boxShadow: theme.shadowSoft,
-        display: "grid", placeItems: "center", fontSize: 17,
+    <div
+      className="sdb-card-lift"
+      style={{
+        ...styles.card,
+        padding: "24px 18px 18px",
+        position: "relative",
+        overflow: "hidden",
+        background: a.grad,
+        border: `1.5px solid ${theme.colors.surface}`,
+      }}
+    >
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: a.strong }} />
+      <div className="sdb-pop" style={{
+        position: "relative", width: 42, height: 42, borderRadius: theme.radius.md,
+        background: theme.colors.surface, color: a.fg, boxShadow: theme.shadowSoft,
+        display: "grid", placeItems: "center", fontSize: 18, marginBottom: 4,
       }}>{icon}</div>
-      <div style={{ color: theme.colors.inkSoft, fontSize: 13, fontWeight: 700, marginTop: 8 }}>{title}</div>
-      <div style={{ fontSize: 29, fontWeight: 800, marginTop: 4, fontFamily: theme.font.display }}>{value}</div>
-      {subtitle && <div style={{ ...styles.muted, fontSize: 12.5, marginTop: 5 }}>{subtitle}</div>}
+      <div style={{ color: theme.colors.ink, opacity: 0.62, fontSize: 13, fontWeight: 700, marginTop: 10 }}>{title}</div>
+      <div style={{ fontSize: 29, fontWeight: 800, marginTop: 4, fontFamily: theme.font.display, color: theme.colors.navy }}>{renderScoreValue(value)}</div>
+      {subtitle && <div style={{ fontSize: 12.5, marginTop: 5, color: theme.colors.ink, opacity: 0.55 }}>{subtitle}</div>}
     </div>
   );
 }
@@ -404,20 +596,28 @@ function computeBadges(totalPoints, longestStreak) {
 function GamificationPanel({ totalPoints = 0, currentStreak = 0, longestStreak = 0 }) {
   const badges = computeBadges(totalPoints, longestStreak);
   return (
-    <div style={{ ...styles.card, marginBottom: 22, background: theme.colors.navy, color: "#fff", border: "none", boxShadow: theme.shadow }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
+    <div
+      style={{
+        ...styles.card, marginBottom: 22, color: "#fff", border: "none", boxShadow: theme.shadow,
+        position: "relative", overflow: "hidden",
+        background: `linear-gradient(120deg, ${theme.colors.tealDark} 0%, ${theme.colors.navy} 55%, ${theme.colors.navyDark} 100%)`,
+      }}
+    >
+      <Grain opacity={0.06} />
+      <div className="sdb-decor" style={{ position: "absolute", top: -50, right: -20, width: 180, height: 180, borderRadius: "50%", background: theme.colors.coral, opacity: 0.18 }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 46, height: 46, borderRadius: "50%", background: theme.colors.accent, display: "grid", placeItems: "center", fontSize: 22 }}>🏆</div>
+          <div className="sdb-bob" style={{ width: 46, height: 46, borderRadius: "50%", background: theme.colors.accent, display: "grid", placeItems: "center", fontSize: 22, boxShadow: "0 6px 16px rgba(255,122,89,.4)" }}>🏆</div>
           <div>
-            <div style={{ fontFamily: theme.font.display, fontSize: 20, fontWeight: 650 }}>{totalPoints} points</div>
-            <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontFamily: theme.font.display, fontSize: 20, fontWeight: 650 }}><AnimatedNumber value={totalPoints} /> points</div>
+            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 2, display: "flex", alignItems: "center", gap: 6, color: theme.colors.gold }}>
               <IconFlame /> {currentStreak}-day streak {longestStreak > currentStreak && `· best ${longestStreak}`}
             </div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {badges.length ? badges.map((b) => (
-            <span key={b.label} style={{ background: "rgba(255,255,255,.12)", padding: "7px 13px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <span key={b.label} className="sdb-pop" style={{ background: "rgba(255,255,255,.14)", padding: "7px 13px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, border: "1px solid rgba(255,255,255,.18)" }}>
               <span>{b.icon}</span>{b.label}
             </span>
           )) : (
@@ -841,14 +1041,16 @@ function App() {
 
           <GamificationPanel totalPoints={profile.totalPoints} currentStreak={profile.currentStreak} longestStreak={profile.longestStreak} />
 
-          <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
+          <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="🎯" accent="teal" title="Current level" value={`Level ${currentLevel}`} subtitle="Adjusts with your practice" />
             <ScoreCard icon="📝" accent="gold" title="Exercises" value={exercises.length} subtitle="Assigned to you" />
             <ScoreCard icon="🎙️" accent="coral" title="Practice sessions" value={patientLogs.length} subtitle="Saved recordings" />
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${avgScore}%`} subtitle="Across all sessions" />
-          </div>
+          </Stagger>
 
           <Section
+            icon="📝"
+            tone="gold"
             title="Your home exercises"
             subtitle="Complete your assigned exercises to earn points, then record your speech practice below. New ones are generated for you automatically as you progress."
             right={
@@ -872,6 +1074,8 @@ function App() {
           </Section>
 
           <Section
+            icon="🎙️"
+            tone="coral"
             title="Speech practice"
             subtitle="Record directly in the browser. The score is an acoustic demo score, not a clinical diagnosis."
             right={<Button secondary onClick={() => loadPatientDashboard(user.id)}>Refresh</Button>}
@@ -895,7 +1099,7 @@ function App() {
           {analysis && <AnalysisCard analysis={analysis} />}
 
           {patientLatest && (
-            <Section title="Your progress" subtitle="Recent saved acoustic metrics from your practice sessions.">
+            <Section icon="📈" tone="teal" title="Your progress" subtitle="Recent saved acoustic metrics from your practice sessions.">
               <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
                 <ProgressBar value={patientLatest.pronunciationScore} label="Pronunciation score" />
                 <ProgressBar value={patientLatest.clarityScore} label="Clarity score" />
@@ -930,14 +1134,14 @@ function App() {
 
           <GamificationPanel totalPoints={pf.totalPoints} currentStreak={pf.currentStreak} longestStreak={pf.longestStreak} />
 
-          <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
+          <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="👤" accent="teal" title="Patient" value={selectedPatient.fullName} subtitle={selectedPatient.email} />
             <ScoreCard icon="🎯" accent="gold" title="Difficulty" value={`Level ${pf.currentDifficultyLevel ?? "—"}`} subtitle="Current adaptive level" />
             <ScoreCard icon="🎙️" accent="coral" title="Sessions" value={logs.length} subtitle="Audio logs" />
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${average}%`} subtitle="Across saved sessions" />
-          </div>
+          </Stagger>
 
-          <Section title="Patient overview" subtitle="Clinical context stored in the therapy profile.">
+          <Section icon="👤" tone="navy" title="Patient overview" subtitle="Clinical context stored in the therapy profile.">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
               <Info label="Name" value={patientDetail?.patient?.fullName || selectedPatient.fullName} />
               <Info label="Email" value={patientDetail?.patient?.email || selectedPatient.email} />
@@ -948,6 +1152,8 @@ function App() {
           </Section>
 
           <Section
+            icon="📋"
+            tone="gold"
             title="Assigned exercises"
             subtitle="Exercises currently assigned to this patient."
             right={
@@ -966,14 +1172,14 @@ function App() {
             {loading && !patientDetail ? <p>Loading…</p> : exercises.length ? exercises.map((a) => <ExerciseCard key={a.id} assignment={a} therapist />) : <Empty text="No exercises assigned." />}
           </Section>
 
-          <Section title="Audio analysis & progress" subtitle="Stored metrics from the patient's speech practice.">
+          <Section icon="📊" tone="teal" title="Audio analysis & progress" subtitle="Stored metrics from the patient's speech practice.">
             {latest && (
-              <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", marginBottom: 20 }}>
+              <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", marginBottom: 20 }}>
                 <ScoreCard icon="🗣️" accent="teal" title="Latest pronunciation" value={`${Math.round(latest.pronunciationScore || 0)}%`} subtitle={scoreLabel(latest.pronunciationScore)} />
                 <ScoreCard icon="🔊" accent="coral" title="Latest clarity" value={`${Math.round(latest.clarityScore || 0)}%`} subtitle="Acoustic quality heuristic" />
                 <ScoreCard icon="〰️" accent="gold" title="Pitch mean" value={`${Math.round(latest.pitchMeanHz || 0)} Hz`} subtitle="Estimated mean pitch" />
                 <ScoreCard icon="⏱️" accent="teal" title="Duration" value={`${Number(latest.durationSeconds || 0).toFixed(1)}s`} subtitle={formatDate(latest.recordedAt)} />
-              </div>
+              </Stagger>
             )}
             {logs.length > 1 && (
               <div style={{ marginBottom: 22 }}>
@@ -984,7 +1190,7 @@ function App() {
             {logs.length ? <ProgressTable logs={logs} /> : <Empty text="No audio sessions have been saved yet." />}
           </Section>
 
-          <Section title="Caregiver feedback" subtitle="Feedback already stored for this patient.">
+          <Section icon="💬" tone="coral" title="Caregiver feedback" subtitle="Feedback already stored for this patient.">
             {feedback.length ? feedback.map((f, i) => (
               <div key={f.id || i} style={{ padding: 15, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginBottom: 10, background: theme.colors.surfaceAlt }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -999,6 +1205,8 @@ function App() {
           </Section>
 
           <Section
+            icon="✨"
+            tone="navy"
             title="AI-assisted recommendation"
             subtitle="Ask Claude for a fresh, explainable recommendation based on this patient's diagnosis and most recent scores."
             right={<Button secondary disabled={recommendationLoading} onClick={() => fetchRecommendation(selectedPatient.id)}>{recommendationLoading ? "Thinking…" : "✨ Get AI recommendation"}</Button>}
@@ -1027,28 +1235,28 @@ function App() {
           <Header title="Therapist dashboard" user={user} logout={logout} />
           {message && <Notice text={message} />}
 
-          <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
+          <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="👥" accent="teal" title="Patients" value={patients.length} subtitle="Patient accounts" />
             <ScoreCard icon="🎙️" accent="coral" title="Audio sessions" value={totalSessions} subtitle="Saved practice sessions" />
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${avg}%`} subtitle="Latest patient scores" />
             <ScoreCard icon="🧠" accent="gold" title="Adaptive therapy" value="Active" subtitle="Difficulty adjusts from scores" />
-          </div>
+          </Stagger>
 
-          <Section title="Quick access" subtitle="Jump to what matters for today's therapy workflow." right={<Button onClick={loadPatients} disabled={loading}>{loading ? "Refreshing…" : "Refresh patients"}</Button>}>
+          <Section icon="⚡" tone="gold" title="Quick access" subtitle="Jump to what matters for today's therapy workflow." right={<Button onClick={loadPatients} disabled={loading}>{loading ? "Refreshing…" : "Refresh patients"}</Button>}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Button secondary onClick={loadPatients}>Patient records</Button>
               <Button secondary onClick={() => document.getElementById("patients")?.scrollIntoView({ behavior: "smooth" })}>Progress analytics</Button>
             </div>
           </Section>
 
-          <Section title="Patients" subtitle="Open a patient to view exercises, audio analytics, progress and caregiver feedback.">
+          <Section icon="👥" tone="teal" title="Patients" subtitle="Open a patient to view exercises, audio analytics, progress and caregiver feedback.">
             <div id="patients">
               {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => loadPatientDetail(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients found."} />}
             </div>
           </Section>
 
           {patients.length > 0 && (
-            <Section title="Team snapshot" subtitle="Latest pronunciation scores across your patient roster.">
+            <Section icon="📊" tone="coral" title="Team snapshot" subtitle="Latest pronunciation scores across your patient roster.">
               <MiniBars patients={patients} />
             </Section>
           )}
@@ -1209,7 +1417,7 @@ function HomePage({ onGetStarted, onLogin }) {
         {/* Hero copy + role cards */}
         <div style={{ position: "relative", zIndex: 1, padding: "72px 20px 120px" }}>
           <div style={{ ...styles.wrap, textAlign: "center" }}>
-            <h1 style={{ fontFamily: theme.font.display, fontWeight: 800, fontSize: "clamp(34px,6vw,56px)", margin: "0 0 18px", color: hero.cream, lineHeight: 1.1 }}>
+            <h1 className="sdb-shine-text" style={{ fontFamily: theme.font.display, fontWeight: 800, fontSize: "clamp(34px,6vw,56px)", margin: "0 0 18px", lineHeight: 1.1 }}>
               Every voice deserves<br />to be heard.
             </h1>
             <p style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 32px", lineHeight: 1.6, color: hero.cream, opacity: 0.82 }}>
@@ -1218,11 +1426,11 @@ function HomePage({ onGetStarted, onLogin }) {
             <div style={{ fontWeight: 700, fontSize: 15, color: hero.cream, marginBottom: 24 }}>Who are you signing up as?</div>
           </div>
 
-          <div style={{ ...styles.wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
+          <Stagger style={{ ...styles.wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
             {ROLE_CARDS.map((c) => (
               <HomeRoleCard key={c.role} card={c} onClick={onGetStarted} />
             ))}
-          </div>
+          </Stagger>
         </div>
 
         {/* Cream wave cutting into the green, revealing white below */}
@@ -1237,12 +1445,61 @@ function HomePage({ onGetStarted, onLogin }) {
       {/* Feature strip — plain light section below the wave */}
       <div style={{ background: "#FFFFFF" }}>
         <div style={{ ...styles.wrap, padding: "10px 20px 64px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
+          <Stagger style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
             <ScoreCard icon="🎙️" accent="violet" title="Record & analyze" value="Instant" subtitle="Pronunciation & pitch feedback in the browser" />
             <ScoreCard icon="🎮" accent="coral" title="Home exercises" value="Gamified" subtitle="Points, streaks and badges keep patients engaged" />
             <ScoreCard icon="📊" accent="gold" title="Progress tracking" value="Visual" subtitle="Dashboards for therapists, patients and caregivers" />
-          </div>
+          </Stagger>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const AUTH_HIGHLIGHTS = [
+  { icon: "🎙️", text: "Practice pronunciation right in your browser — no downloads." },
+  { icon: "📈", text: "Watch pronunciation and clarity trend upward, session by session." },
+  { icon: "🎮", text: "Earn points, keep a streak, and unlock badges as you practice." },
+];
+
+function AuthSidePanel({ mode }) {
+  return (
+    <div
+      className="sdb-decor"
+      style={{
+        position: "relative", overflow: "hidden", flex: "1 1 340px", minWidth: 300,
+        background: `linear-gradient(155deg, ${hero.bg} 0%, ${hero.bgDeep} 100%)`,
+        padding: "44px 40px", display: "flex", flexDirection: "column", justifyContent: "space-between",
+        color: hero.cream,
+      }}
+    >
+      <Grain opacity={0.06} />
+      <div className="sdb-decor" style={{ position: "absolute", top: -60, right: -50, width: 200, height: 200, borderRadius: "50%", background: hero.butter, opacity: 0.14 }} />
+      <div className="sdb-decor" style={{ position: "absolute", bottom: -40, left: -60, width: 200, height: 200, borderRadius: "42% 58% 60% 40% / 48% 42% 58% 52%", background: hero.dustySage, opacity: 0.16 }} />
+
+      <div style={{ position: "relative" }}>
+        <div style={{ fontFamily: theme.font.display, fontWeight: 700, fontSize: 22 }}>
+          Swar <span style={{ color: hero.butter }}>Saathi</span>
+        </div>
+        <h2 style={{ fontFamily: theme.font.display, fontWeight: 800, fontSize: 30, lineHeight: 1.2, margin: "28px 0 14px", maxWidth: 320 }}>
+          {mode === "login" ? "Welcome back to your practice space." : "Every voice deserves to be heard."}
+        </h2>
+        <p style={{ opacity: 0.8, lineHeight: 1.6, maxWidth: 320, margin: 0 }}>
+          One place for recordings, exercises, progress, and caregiver updates.
+        </p>
+      </div>
+
+      <Stagger style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16, margin: "36px 0" }}>
+        {AUTH_HIGHLIGHTS.map((h) => (
+          <div key={h.text} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(245,241,232,0.14)", display: "grid", placeItems: "center", fontSize: 16, flexShrink: 0 }}>{h.icon}</div>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, opacity: 0.88, paddingTop: 5 }}>{h.text}</p>
+          </div>
+        ))}
+      </Stagger>
+
+      <div className="sdb-bob" style={{ position: "relative", display: "flex", justifyContent: "center", opacity: 0.9 }}>
+        <Waveform height={44} bars={11} color={hero.butter} />
       </div>
     </div>
   );
@@ -1278,9 +1535,8 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
   const forgotPassword = () => notify("Password reset isn't self-service yet — please contact your clinic administrator.");
 
   return (
-    <div className="sdb" style={{ ...styles.page, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+    <div className="sdb" style={{ ...styles.page, display: "flex", flexDirection: "column", position: "relative" }}>
       <GlobalStyle />
-      <AuthDecor />
 
       <div style={{ ...styles.wrap, position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 4px 0" }}>
         {onBack ? (
@@ -1295,22 +1551,21 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "40px 0" }}>
-        <div style={{ ...styles.card, width: "100%", maxWidth: 460, padding: "40px 36px", borderRadius: theme.radius.xl, boxShadow: theme.shadow }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "40px 20px" }}>
+        <div
+          className="sdb-enter"
+          style={{
+            width: "100%", maxWidth: 900, borderRadius: theme.radius.xl, boxShadow: theme.shadow,
+            overflow: "hidden", display: "flex", flexWrap: "wrap", background: theme.colors.surface,
+          }}
+        >
+          <AuthSidePanel mode={mode} />
+
+          <div style={{ flex: "1.15 1 380px", minWidth: 300, padding: "40px 36px" }}>
           <div style={{ textAlign: "center" }}>
-            <img
-              src="/swarsaathi-logo.png"
-              alt="Swar Saathi"
-              style={{
-                width: "220px",
-                maxWidth: "85%",
-                height: "auto",
-                display: "block",
-                margin: "0 auto 12px",
-                objectFit: "contain",
-              }}
-            />
-            <p style={{ ...styles.muted, margin: "0 0 22px" }}>{mode === "login" ? "Your voice. Our support." : "Start your therapy journey."}</p>
+            <div className="sdb-decor" style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+              <Logo size={48} />
+            </div>
             <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25, color: theme.colors.navy }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
             <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
           </div>
@@ -1398,36 +1653,60 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
           ) : (
             <Button secondary full onClick={() => switchMode("login")}>Already have an account? Log in</Button>
           )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+function greetingForHour() {
+  const h = new Date().getHours();
+  if (h < 5) return "Working late";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good evening";
+}
+
 function Header({ title, user, logout, back }) {
+  const name = (user.fullName || user.email || "there").split(" ")[0].split("@")[0];
   return (
-    <div style={{ ...styles.card, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, flexWrap: "wrap" }}>
-      <div>
-        {back && (
-          <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
-        )}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img
-            src="/swarsaathi-logo.png"
-            alt="Swar Saathi"
-            style={{
-              width: "180px",
-              height: "90px",
-              maxWidth: "100%",
-              display: "block",
-              objectFit: "contain",
-              objectPosition: "left center",
-            }}
-          />
+    <div
+      style={{
+        position: "relative", overflow: "hidden", marginBottom: 18,
+        borderRadius: theme.radius.lg, padding: "22px 26px",
+        background: `linear-gradient(120deg, ${theme.colors.navy} 0%, ${theme.colors.navyDark} 100%)`,
+        boxShadow: theme.shadow, color: "#fff",
+      }}
+    >
+      <Grain opacity={0.05} />
+      <div className="sdb-decor" style={{ position: "absolute", top: -60, right: -40, width: 200, height: 200, borderRadius: "50%", background: theme.colors.teal, opacity: 0.16 }} />
+      <div className="sdb-decor" style={{ position: "absolute", bottom: -70, right: 140, width: 150, height: 150, borderRadius: "50%", background: theme.colors.coral, opacity: 0.16 }} />
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, flexWrap: "wrap" }}>
+        <div>
+          {back && (
+            <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
+          )}
+          <div style={{ fontFamily: theme.font.display, fontWeight: 650, fontSize: 22, lineHeight: 1 }}>
+            Swar <span style={{ color: theme.colors.teal }}>Saathi</span>
+          </div>
+          <div style={{ fontWeight: 700, marginTop: 10, fontSize: 18, fontFamily: theme.font.display }}>
+            {greetingForHour()}, {name} <span style={{ opacity: 0.55, fontWeight: 500, fontSize: 14 }}>· {title}</span>
+          </div>
         </div>
-        <div style={{ fontWeight: 600, marginTop: 6, color: theme.colors.inkSoft, fontSize: 14 }}>{title} · {user.fullName || user.email || "User"}</div>
+        <button
+          onClick={logout}
+          className="sdb-hover-lift"
+          style={{
+            border: "1.5px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.08)", color: "#fff",
+            borderRadius: theme.radius.pill, padding: "12px 22px", fontWeight: 700, fontSize: 14.5,
+            fontFamily: theme.font.display, cursor: "pointer",
+          }}
+        >
+          Log out
+        </button>
       </div>
-      <Button secondary onClick={logout}>Log out</Button>
     </div>
   );
 }
@@ -1452,8 +1731,19 @@ function Info({ label, value }) {
 function ExerciseCard({ assignment, therapist, onComplete, completing }) {
   const e = assignment.exercise || {};
   const done = Boolean(assignment.isCompleted);
+  const wasDoneRef = useRef(done);
+  const [justCompleted, setJustCompleted] = useState(false);
+  useEffect(() => {
+    if (done && !wasDoneRef.current) {
+      setJustCompleted(true);
+      const t = setTimeout(() => setJustCompleted(false), 900);
+      return () => clearTimeout(t);
+    }
+    wasDoneRef.current = done;
+  }, [done]);
   return (
-    <div style={{ padding: 18, border: `2px solid ${done ? theme.colors.tealDark : theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12, background: done ? theme.colors.tealSoft : "transparent" }}>
+    <div style={{ position: "relative", padding: 18, border: `2px solid ${done ? theme.colors.tealDark : theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 12, background: done ? theme.colors.tealSoft : "transparent", transition: `background .3s ${theme.ease}, border-color .3s ${theme.ease}` }}>
+      {justCompleted && <ConfettiBurst />}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 600, fontSize: 17 }}>{e.title || "Exercise"}</h3>
@@ -1488,7 +1778,7 @@ function ExerciseCard({ assignment, therapist, onComplete, completing }) {
 
 function AnalysisCard({ analysis }) {
   return (
-    <Section title="Speech analysis" subtitle="Instant browser-based acoustic feedback. These values are demo heuristics, not clinical measurements.">
+    <Section icon="🗣️" tone="coral" title="Speech analysis" subtitle="Instant browser-based acoustic feedback. These values are demo heuristics, not clinical measurements.">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 14 }}>
         <ScoreCard icon="🗣️" accent="teal" title="Pronunciation" value={`${Math.round(analysis.pronunciationScore)}%`} subtitle={scoreLabel(analysis.pronunciationScore)} />
         <ScoreCard icon="🔊" accent="coral" title="Clarity" value={`${Math.round(analysis.clarityScore)}%`} subtitle="Acoustic quality" />
@@ -1688,13 +1978,13 @@ function CaregiverPortal({ user, logout, api }) {
       <div style={styles.wrap}>
         <Header title="Caregiver portal" user={user} logout={logout} />
         {message && <Notice text={message} />}
-        <Section title="Patient monitoring" subtitle="Review assigned exercises, therapy progress and caregiver feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
+        <Section icon="👀" tone="teal" title="Patient monitoring" subtitle="Review assigned exercises, therapy progress and caregiver feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
           {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => open(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients available."} />}
         </Section>
         {selected && detail && (
           <>
             <GamificationPanel totalPoints={detail.profile?.totalPoints} currentStreak={detail.profile?.currentStreak} longestStreak={detail.profile?.longestStreak} />
-            <Section title={`${selected.fullName}'s therapy summary`} subtitle="Current therapy data.">
+            <Section icon="🗒️" tone="navy" title={`${selected.fullName}'s therapy summary`} subtitle="Current therapy data.">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
                 <Info label="Current difficulty" value={`Level ${detail.profile?.currentDifficultyLevel ?? "—"}`} />
                 <Info label="Diagnosis" value={detail.profile?.diagnosis || "Not specified"} />
@@ -1702,10 +1992,10 @@ function CaregiverPortal({ user, logout, api }) {
                 <Info label="Assigned exercises" value={detail.exercises?.length ?? 0} />
               </div>
             </Section>
-            <Section title="Assigned exercises">
+            <Section icon="📋" tone="gold" title="Assigned exercises">
               {detail.exercises?.length ? detail.exercises.map((a) => <ExerciseCard key={a.id} assignment={a} therapist />) : <Empty text="No exercises assigned." />}
             </Section>
-            <Section title="Progress">
+            <Section icon="📈" tone="teal" title="Progress">
               {detail.audioLogs?.length > 1 && (
                 <div style={{ marginBottom: 20 }}>
                   <TrendChart logs={detail.audioLogs} />
@@ -1713,7 +2003,7 @@ function CaregiverPortal({ user, logout, api }) {
               )}
               <ProgressTable logs={detail.audioLogs || []} />
             </Section>
-            <Section title="Therapist / caregiver feedback" subtitle="Send a remote update to the therapy team, or review what's already been shared.">
+            <Section icon="💬" tone="coral" title="Therapist / caregiver feedback" subtitle="Send a remote update to the therapy team, or review what's already been shared.">
               <FeedbackForm onSubmit={submitFeedback} submitting={submittingFeedback} />
               {feedback.length ? feedback.map((f, i) => (
                 <div key={f.id || i} style={{ padding: 14, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginTop: 9, background: theme.colors.surfaceAlt }}>
