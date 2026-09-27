@@ -506,22 +506,30 @@ function ScoreCard({ icon, title, value, subtitle, accent = "teal" }) {
       className="sdb-card-lift"
       style={{
         ...styles.card,
-        padding: "24px 18px 18px",
+        padding: "18px 18px 18px",
         position: "relative",
         overflow: "hidden",
         background: a.grad,
         border: `1.5px solid ${theme.colors.surface}`,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: a.strong }} />
-      <div className="sdb-pop" style={{
-        position: "relative", width: 42, height: 42, borderRadius: theme.radius.md,
-        background: theme.colors.surface, color: a.fg, boxShadow: theme.shadowSoft,
-        display: "grid", placeItems: "center", fontSize: 18, marginBottom: 4,
-      }}>{icon}</div>
-      <div style={{ color: theme.colors.ink, opacity: 0.62, fontSize: 13, fontWeight: 700, marginTop: 10 }}>{title}</div>
-      <div style={{ fontSize: 29, fontWeight: 800, marginTop: 4, fontFamily: theme.font.display, color: theme.colors.navy }}>{renderScoreValue(value)}</div>
-      {subtitle && <div style={{ fontSize: 12.5, marginTop: 5, color: theme.colors.ink, opacity: 0.55 }}>{subtitle}</div>}
+      {/* Oversized, low-opacity watermark of the card's own icon — fills the
+          card's upper corner with a deliberate motif instead of empty gradient. */}
+      <div aria-hidden="true" style={{ position: "absolute", top: -6, right: -6, fontSize: 76, lineHeight: 1, opacity: 0.14, transform: "rotate(8deg)", pointerEvents: "none" }}>{icon}</div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+        <div className="sdb-pop" style={{
+          width: 42, height: 42, borderRadius: theme.radius.md,
+          background: theme.colors.surface, color: a.fg, boxShadow: theme.shadowSoft,
+          display: "grid", placeItems: "center", fontSize: 18,
+        }}>{icon}</div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: a.fg, background: "rgba(255,255,255,.55)", padding: "4px 10px", borderRadius: 99 }}>{title}</span>
+      </div>
+      <div style={{ fontSize: 30, fontWeight: 800, marginTop: 14, fontFamily: theme.font.display, color: theme.colors.navy, position: "relative" }}>{renderScoreValue(value)}</div>
+      {subtitle && <div style={{ fontSize: 12.5, marginTop: 5, color: theme.colors.ink, opacity: 0.55, position: "relative" }}>{subtitle}</div>}
     </div>
   );
 }
@@ -1563,9 +1571,11 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
 
           <div style={{ flex: "1.15 1 380px", minWidth: 300, padding: "40px 36px" }}>
           <div style={{ textAlign: "center" }}>
-            <div className="sdb-decor" style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-              <Logo size={48} />
-            </div>
+            <img
+              src="/swarsaathi-logo.png"
+              alt="Swar Saathi"
+              style={{ width: 96, height: 96, objectFit: "contain", display: "block", margin: "0 auto 10px" }}
+            />
             <h1 style={{ margin: 0, fontFamily: theme.font.display, fontWeight: 650, fontSize: 25, color: theme.colors.navy }}>{mode === "login" ? "Welcome back" : "Create your account"}</h1>
             <p style={{ ...styles.muted, margin: "6px 0 0" }}>{mode === "login" ? "Log in to continue your therapy journey" : "Join as a patient, therapist, or caregiver"}</p>
           </div>
@@ -1684,15 +1694,25 @@ function Header({ title, user, logout, back }) {
       <div className="sdb-decor" style={{ position: "absolute", top: -60, right: -40, width: 200, height: 200, borderRadius: "50%", background: theme.colors.teal, opacity: 0.16 }} />
       <div className="sdb-decor" style={{ position: "absolute", bottom: -70, right: 140, width: 150, height: 150, borderRadius: "50%", background: theme.colors.coral, opacity: 0.16 }} />
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, flexWrap: "wrap" }}>
-        <div>
-          {back && (
-            <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 10, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
-          )}
-          <div style={{ fontFamily: theme.font.display, fontWeight: 650, fontSize: 22, lineHeight: 1 }}>
-            Swar <span style={{ color: theme.colors.teal }}>Saathi</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div
+            style={{
+              width: 60, height: 60, borderRadius: theme.radius.md, background: "#fff", flexShrink: 0,
+              display: "grid", placeItems: "center", boxShadow: theme.shadowSoft, padding: 6,
+            }}
+          >
+            <img src="/swarsaathi-logo.png" alt="Swar Saathi" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
-          <div style={{ fontWeight: 700, marginTop: 10, fontSize: 18, fontFamily: theme.font.display }}>
-            {greetingForHour()}, {name} <span style={{ opacity: 0.55, fontWeight: 500, fontSize: 14 }}>· {title}</span>
+          <div>
+            {back && (
+              <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 8, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
+            )}
+            <div style={{ fontFamily: theme.font.display, fontWeight: 650, fontSize: 20, lineHeight: 1 }}>
+              Swar <span style={{ color: theme.colors.teal }}>Saathi</span>
+            </div>
+            <div style={{ fontWeight: 700, marginTop: 8, fontSize: 18, fontFamily: theme.font.display }}>
+              {greetingForHour()}, {name} <span style={{ opacity: 0.55, fontWeight: 500, fontSize: 14 }}>· {title}</span>
+            </div>
           </div>
         </div>
         <button
