@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AiCoachChat, WellnessCheckIn, AiReportPanel } from "./AiFeatures";
+import LandingPage from "./LandingPage";
+import WelcomeHost, { announceWelcome } from "./WelcomePopup";
 
 const API_URL = "https://swar-saathi-backend.onrender.com";
 
@@ -851,7 +854,7 @@ function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Login failed");
-      saveToken(data.token, remember); setUser(data.user);
+      saveToken(data.token, remember); setUser(data.user); announceWelcome(data.user.fullName, false);
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
@@ -865,7 +868,7 @@ function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not create account");
-      saveToken(data.token, remember); setUser(data.user);
+      saveToken(data.token, remember); setUser(data.user); announceWelcome(data.user.fullName, true);
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
@@ -903,8 +906,8 @@ function App() {
   const generateExercises = async (patientId, afterReload) => {
     setLoading(true); setMessage("Generating new exercises...");
     try {
-      await api(`/api/patients/${patientId}/generate-exercises`, { method: "POST" });
-      setMessage("New exercises added!");
+      const gen = await api(`/api/patients/${patientId}/generate-exercises`, { method: "POST" });
+      setMessage(gen.source === "offline" ? "New exercises added (built-in set — AI is busy)." : "New AI exercises added!");
       await afterReload();
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
@@ -997,6 +1000,7 @@ function App() {
     const payload = decodeJwt(t);
     if (!payload?.userId || !payload?.role) { clearToken(); return; }
     setUser({ id: payload.userId, role: payload.role });
+    api("/api/auth/me").then((d) => setUser(d.user)).catch(() => { clearToken(); setUser(null); });
   }, []);
 
   useEffect(() => {
@@ -1017,7 +1021,7 @@ function App() {
   if (!user) {
     if (publicView === "home") {
       return (
-        <HomePage
+        <LandingPage
           onGetStarted={(role) => { setAuthIntent({ mode: "signup", role: role || "PATIENT" }); setPublicView("auth"); }}
           onLogin={() => { setAuthIntent({ mode: "login", role: "PATIENT" }); setPublicView("auth"); }}
         />
@@ -1080,6 +1084,9 @@ function App() {
               />
             ))}
           </Section>
+
+          <WellnessCheckIn api={api} patientId={user.id} />
+          <AiCoachChat api={api} patientId={user.id} />
 
           <Section
             icon="🎙️"
@@ -1211,6 +1218,8 @@ function App() {
               </div>
             )) : <Empty text="No caregiver feedback recorded yet." />}
           </Section>
+
+          <AiReportPanel api={api} patientId={selectedPatient.id} patientName={selectedPatient.fullName} />
 
           <Section
             icon="✨"
@@ -2004,6 +2013,8 @@ function CaregiverPortal({ user, logout, api }) {
         {selected && detail && (
           <>
             <GamificationPanel totalPoints={detail.profile?.totalPoints} currentStreak={detail.profile?.currentStreak} longestStreak={detail.profile?.longestStreak} />
+            <AiReportPanel api={api} patientId={selected.id} patientName={selected.fullName} />
+            <AiCoachChat api={api} patientId={selected.id} title="Ask the AI coach about this patient" />
             <Section icon="🗒️" tone="navy" title={`${selected.fullName}'s therapy summary`} subtitle="Current therapy data.">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
                 <Info label="Current difficulty" value={`Level ${detail.profile?.currentDifficultyLevel ?? "—"}`} />
@@ -2044,4 +2055,13 @@ function CaregiverPortal({ user, logout, api }) {
   );
 }
 
-export default App;
+function Root() {
+  return (
+    <>
+      <App />
+      <WelcomeHost />
+    </>
+  );
+}
+
+export default Root;
