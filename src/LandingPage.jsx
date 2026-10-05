@@ -348,7 +348,7 @@ function FinalCta({ onGetStarted, onLogin }) {
   );
 }
 
-const TEAM = ["Abhishek", "Aaquib", "Luvvkussh", "Bhoomi", "Komal"];
+const TEAM = ["Komal", "Abhishek", "Aaquib", "Luvvkussh", "Bhoomi"];
 
 function Credits() {
   return (
