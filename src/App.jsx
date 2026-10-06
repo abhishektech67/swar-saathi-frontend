@@ -320,6 +320,7 @@ function IconEyeOff(props) { return <svg {...iconProps} width={18} height={18} {
 function IconUser(props) { return <svg {...iconProps} width={18} height={18} {...props}><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" /></svg>; }
 function IconArrowRight(props) { return <svg {...iconProps} width={17} height={17} strokeWidth={2.2} {...props}><path d="M4 12h16M13 5l7 7-7 7" /></svg>; }
 function IconCake(props) { return <svg {...iconProps} width={18} height={18} {...props}><path d="M4 21v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" /><path d="M2 21h20" /><path d="M8 12V8M12 12V8M16 12V8" /><path d="M12 3c-1 1-1 2 0 3s1 2 0 3" /></svg>; }
+function IconKey(props) { return <svg {...iconProps} width={18} height={18} {...props}><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 20 3M16 7l3 3M14 9l2 2" /></svg>; }
 function IconFlame(props) { return <svg {...iconProps} width={16} height={16} {...props}><path d="M12 2c1 4-4 5-4 9a4 4 0 0 0 8 0c2 1 3 3 3 5a7 7 0 0 1-14 0c0-5 4-7 4-11 1 1 1 2 1 3 1-2 1-4 2-6Z" /></svg>; }
 function IconCheck(props) { return <svg {...iconProps} width={16} height={16} strokeWidth={2.4} {...props}><path d="M20 6 9 17l-5-5" /></svg>; }
 function IconStar(props) { return <svg {...iconProps} width={16} height={16} fill="currentColor" stroke="none" {...props}><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7L12 17.3 5.7 20.9l1.7-7L2 9.2l7.1-.6L12 2z" /></svg>; }
@@ -792,6 +793,154 @@ function saveToken(value, remember) {
 function readToken() { return localStorage.getItem("token") || sessionStorage.getItem("token"); }
 function clearToken() { localStorage.removeItem("token"); sessionStorage.removeItem("token"); }
 
+/* ------------------------------------------------------------------ */
+/* CODE LINKING UI                                                     */
+/* Therapist code  -> patients enter it to join that therapist.        */
+/* Patient invite  -> caregivers enter it to follow that one patient.  */
+/* ------------------------------------------------------------------ */
+function CopyCode({ code }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* clipboard blocked — ignore */ }
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <code style={{ fontFamily: "monospace", fontSize: 24, fontWeight: 800, letterSpacing: 3, background: theme.colors.tealSoft, color: theme.colors.tealDark, padding: "10px 18px", borderRadius: theme.radius.md }}>{code}</code>
+      <Button secondary small onClick={copy}>{copied ? "Copied ✓" : "Copy"}</Button>
+    </div>
+  );
+}
+
+function TherapistCodeCard({ code }) {
+  if (!code) return null;
+  return (
+    <Section
+      icon="🔑"
+      tone="teal"
+      title="Your therapist code"
+      subtitle="Share this code with your patients. When they enter it (at signup or in their portal), they appear in your list. Only patients who use your code are visible to you."
+    >
+      <CopyCode code={code} />
+    </Section>
+  );
+}
+
+function TherapistLinkCard({ api }) {
+  const [therapists, setTherapists] = useState([]);
+  const [inviteCode, setInviteCode] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    api("/api/auth/me")
+      .then((d) => { setTherapists(d.user.therapists || []); setInviteCode(d.user.inviteCode || ""); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const link = async () => {
+    if (!code.trim()) return;
+    setBusy(true); setNote("");
+    try {
+      const d = await api("/api/patient/link-therapist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ therapistCode: code.trim() }),
+      });
+      setTherapists(d.therapists || []); setCode(""); setNote(d.message);
+    } catch (e) { setNote(e.message); } finally { setBusy(false); }
+  };
+
+  const unlink = async (id) => {
+    setBusy(true); setNote("");
+    try {
+      const d = await api(`/api/patient/therapists/${id}`, { method: "DELETE" });
+      setTherapists(d.therapists || []); setNote("Disconnected.");
+    } catch (e) { setNote(e.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <Section
+      icon="🤝"
+      tone="navy"
+      title="Your care team"
+      subtitle="Connect to your therapist with their code. Only connected therapists can see your data. No therapist? No problem — your AI coach is here to help."
+    >
+      {therapists.length ? therapists.map((t) => (
+        <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: 12, border: `1px solid ${theme.colors.lineSoft}`, borderRadius: theme.radius.md, marginBottom: 8, background: theme.colors.surfaceAlt }}>
+          <strong>🩺 {t.fullName}</strong>
+          <Button secondary small disabled={busy} onClick={() => unlink(t.id)}>Disconnect</Button>
+        </div>
+      )) : <Empty text="Not connected to a therapist yet." />}
+
+      <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="Therapist code (e.g. THR-K7M2QX)"
+          style={{ ...inputStyle, paddingLeft: 14, flex: "1 1 220px" }}
+        />
+        <Button onClick={link} disabled={busy || !code.trim()}>{busy ? "Please wait…" : "Connect"}</Button>
+      </div>
+      {note && <div style={{ ...styles.muted, fontSize: 13, marginTop: 10 }}>{note}</div>}
+
+      {inviteCode && (
+        <div style={{ marginTop: 22 }}>
+          <div style={{ fontSize: 13, color: theme.colors.inkSoft, marginBottom: 8 }}>
+            Want a family member or caregiver to follow your progress? Give them this invite code:
+          </div>
+          <CopyCode code={inviteCode} />
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function CaregiverLinkForm({ api, onLinked }) {
+  const [code, setCode] = useState("");
+  const [relationship, setRelationship] = useState("PARENT");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setBusy(true); setNote("");
+    try {
+      const d = await api("/api/caregiver/link-patient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode: code.trim(), relationship }),
+      });
+      setNote(d.message); setCode(""); onLinked?.();
+    } catch (err) { setNote(err.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <form onSubmit={submit} style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="Patient invite code (e.g. PAT-4HX9ZB)"
+        style={{ ...inputStyle, paddingLeft: 14, flex: "1 1 220px" }}
+      />
+      <select value={relationship} onChange={(e) => setRelationship(e.target.value)} style={{ ...inputStyle, paddingLeft: 14, flex: "0 1 160px" }}>
+        <option value="PARENT">Parent</option>
+        <option value="GUARDIAN">Guardian</option>
+        <option value="SPOUSE">Spouse</option>
+        <option value="OTHER">Other</option>
+      </select>
+      <Button type="submit" disabled={busy || !code.trim()}>{busy ? "Linking…" : "Link patient"}</Button>
+      {note && <div style={{ ...styles.muted, fontSize: 13, width: "100%" }}>{note}</div>}
+    </form>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -858,13 +1007,20 @@ function App() {
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
-  const handleRegister = async ({ fullName, email, password, role, dateOfBirth, remember }) => {
+  const handleRegister = async ({ fullName, email, password, role, dateOfBirth, therapistCode, remember }) => {
     setLoading(true); setMessage("");
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: fullName.trim(), email: email.trim(), password, role, dateOfBirth: dateOfBirth || undefined }),
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim(),
+          password,
+          role,
+          dateOfBirth: dateOfBirth || undefined,
+          therapistCode: therapistCode?.trim() || undefined,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not create account");
@@ -900,9 +1056,9 @@ function App() {
     } catch (err) { setMessage(err.message); } finally { setLoading(false); }
   };
 
-  // Asks the backend to have Claude generate a fresh batch of exercises for
-  // a patient (tailored to their difficulty level, diagnosis and recent
-  // scores), then re-loads whichever view is showing that patient's data.
+  // Asks the backend to generate a fresh batch of exercises for a patient
+  // (tailored to their difficulty level, diagnosis and recent scores), then
+  // re-loads whichever view is showing that patient's data.
   const generateExercises = async (patientId, afterReload) => {
     setLoading(true); setMessage("Generating new exercises...");
     try {
@@ -1052,6 +1208,8 @@ function App() {
           {message && <Notice text={message} />}
 
           <GamificationPanel totalPoints={profile.totalPoints} currentStreak={profile.currentStreak} longestStreak={profile.longestStreak} />
+
+          <TherapistLinkCard api={api} />
 
           <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
             <ScoreCard icon="🎯" accent="teal" title="Current level" value={`Level ${currentLevel}`} subtitle="Adjusts with your practice" />
@@ -1225,7 +1383,7 @@ function App() {
             icon="✨"
             tone="navy"
             title="AI-assisted recommendation"
-            subtitle="Ask Claude for a fresh, explainable recommendation based on this patient's diagnosis and most recent scores."
+            subtitle="Ask the AI for a fresh, explainable recommendation based on this patient's diagnosis and most recent scores."
             right={<Button secondary disabled={recommendationLoading} onClick={() => fetchRecommendation(selectedPatient.id)}>{recommendationLoading ? "Thinking…" : "✨ Get AI recommendation"}</Button>}
           >
             {recommendation ? (
@@ -1253,11 +1411,13 @@ function App() {
           {message && <Notice text={message} />}
 
           <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
-            <ScoreCard icon="👥" accent="teal" title="Patients" value={patients.length} subtitle="Patient accounts" />
+            <ScoreCard icon="👥" accent="teal" title="Patients" value={patients.length} subtitle="Linked to your code" />
             <ScoreCard icon="🎙️" accent="coral" title="Audio sessions" value={totalSessions} subtitle="Saved practice sessions" />
             <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${avg}%`} subtitle="Latest patient scores" />
             <ScoreCard icon="🧠" accent="gold" title="Adaptive therapy" value="Active" subtitle="Difficulty adjusts from scores" />
           </Stagger>
+
+          <TherapistCodeCard code={user.therapistCode} />
 
           <Section icon="⚡" tone="gold" title="Quick access" subtitle="Jump to what matters for today's therapy workflow." right={<Button onClick={loadPatients} disabled={loading}>{loading ? "Refreshing…" : "Refresh patients"}</Button>}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -1268,7 +1428,7 @@ function App() {
 
           <Section icon="👥" tone="teal" title="Patients" subtitle="Open a patient to view exercises, audio analytics, progress and caregiver feedback.">
             <div id="patients">
-              {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => loadPatientDetail(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients found."} />}
+              {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => loadPatientDetail(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients yet — share your therapist code so patients can connect to you."} />}
             </div>
           </Section>
 
@@ -1536,6 +1696,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState(initialRole);
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [therapistCode, setTherapistCode] = useState("");
 
   const switchMode = (next) => { setMode(next); notify(""); setShowPassword(false); };
 
@@ -1546,7 +1707,7 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
     if (signupPassword.length < 8) { notify("Password must be at least 8 characters."); return; }
     if (signupPassword !== confirmPassword) { notify("Passwords don't match."); return; }
     if (role === "PATIENT" && !dateOfBirth) { notify("Date of birth is required for patient accounts."); return; }
-    onRegister({ fullName, email: signupEmail, password: signupPassword, role, dateOfBirth, remember });
+    onRegister({ fullName, email: signupEmail, password: signupPassword, role, dateOfBirth, therapistCode, remember });
   };
 
   const forgotPassword = () => notify("Password reset isn't self-service yet — please contact your clinic administrator.");
@@ -1645,6 +1806,21 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
                   </label>
                 )}
               </div>
+
+              {role === "PATIENT" && (
+                <div style={{ marginTop: 14 }}>
+                  <InputField icon={<IconKey />} type="text" placeholder="Therapist code (optional)" value={therapistCode} onChange={(e) => setTherapistCode(e.target.value.toUpperCase())} />
+                  <div style={{ fontSize: 12, color: theme.colors.inkFaint, margin: "6px 4px 0", lineHeight: 1.5 }}>
+                    Got a code from your therapist? Enter it to connect. No code? No problem — our AI coach will guide you.
+                  </div>
+                </div>
+              )}
+
+              {role === "CAREGIVER" && (
+                <div style={{ fontSize: 12, color: theme.colors.inkFaint, margin: "10px 4px 0", lineHeight: 1.5 }}>
+                  After signing up, enter the patient's invite code in your portal to follow their progress.
+                </div>
+              )}
 
               <div style={{ marginTop: 18 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, color: theme.colors.inkSoft, cursor: "pointer", fontSize: 13.5 }}>
@@ -2007,8 +2183,9 @@ function CaregiverPortal({ user, logout, api }) {
       <div style={styles.wrap}>
         <Header title="Caregiver portal" user={user} logout={logout} />
         {message && <Notice text={message} />}
-        <Section icon="👀" tone="teal" title="Patient monitoring" subtitle="Review assigned exercises, therapy progress and caregiver feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
-          {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => open(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients available."} />}
+        <Section icon="👀" tone="teal" title="Patient monitoring" subtitle="Link a patient with their invite code, then review exercises, therapy progress and feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
+          <CaregiverLinkForm api={api} onLinked={load} />
+          {patients.length ? patients.map((p) => <PatientRow key={p.id} patient={p} onOpen={() => open(p)} />) : <Empty text={loading ? "Loading patients…" : "No patients linked yet. Ask the patient for their invite code."} />}
         </Section>
         {selected && detail && (
           <>
