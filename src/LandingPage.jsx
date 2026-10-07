@@ -304,7 +304,7 @@ function CoachShowcase({ onGetStarted }) {
       <div style={{ ...wrap, padding: "90px 20px", display: "flex", flexWrap: "wrap", gap: 48, alignItems: "center", position: "relative" }}>
         <Reveal style={{ flex: "1 1 380px", minWidth: 0 }}>
           <div style={{ color: h.butter, fontWeight: 800, letterSpacing: "0.16em", fontSize: 12.5, marginBottom: 10 }}>MEET YOUR AI COACH</div>
-          <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(28px,4.5vw,40px)", margin: 0, lineHeight: 1.15 }}>A caring guide for every practice session</h2>
+          <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(28px,4.5vw,40px)", margin: 0, lineHeight: 1.15, color: h.cream, textShadow: "0 2px 18px rgba(0,0,0,0.22)" }}>A caring guide for every practice session</h2>
           <p style={{ lineHeight: 1.7, fontSize: 16.5, opacity: 0.85, margin: "16px 0 22px", maxWidth: 480 }}>
             Ask about breathing, voice care or tricky sounds and get short, friendly answers based on your own progress and wellness check-ins. It supports your therapist — it never replaces them, and it points you to urgent care when something sounds serious.
           </p>
@@ -335,7 +335,7 @@ function FinalCta({ onGetStarted, onLogin }) {
           <div aria-hidden="true" className="ss-drift" style={{ position: "absolute", top: -60, right: -40, width: 220, height: 220, borderRadius: "50%", background: h.butter, opacity: 0.14 }} />
           <div style={{ position: "relative" }}>
             <div style={{ display: "grid", placeItems: "center", marginBottom: 18 }}><Waveform bars={18} height={46} /></div>
-            <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(28px,5vw,42px)", margin: "0 0 12px" }}>Ready to find your voice?</h2>
+            <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(28px,5vw,42px)", margin: "0 0 12px", color: h.cream, textShadow: "0 2px 18px rgba(0,0,0,0.22)" }}>Ready to find your voice?</h2>
             <p style={{ maxWidth: 520, margin: "0 auto 26px", lineHeight: 1.65, opacity: 0.88, fontSize: 16.5 }}>Join Swar Saathi today — free to start, simple to use, and built with care.</p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <button className="ss-btn" onClick={() => onGetStarted("PATIENT")} style={{ background: h.butter, color: h.ink, border: "none", borderRadius: 999, padding: "15px 32px", fontWeight: 800, fontSize: 16.5 }}>Create free account</button>
