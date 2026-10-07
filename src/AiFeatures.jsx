@@ -98,7 +98,9 @@ const COACH_SUGGESTIONS = [
   "Why did my score go down today?",
 ];
 
-export function AiCoachChat({ api, patientId, title = "Your AI speech coach" }) {
+// `seed` ({ id, text }) lets the Voice Check hand a user-initiated summary (numbers only, never audio)
+// to the coach; it is sent once per seed.id.
+export function AiCoachChat({ api, patientId, title = "Your AI speech coach", seed = null }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -133,6 +135,14 @@ export function AiCoachChat({ api, patientId, title = "Your AI speech coach" }) 
       setSending(false);
     }
   };
+
+  const lastSeedRef = useRef(null);
+  useEffect(() => {
+    if (!seed || seed.id === lastSeedRef.current) return;
+    lastSeedRef.current = seed.id;
+    send(seed.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed]);
 
   return (
     <Shell icon="🤖" title={title} tone={c.teal} subtitle="Friendly, health-aware guidance based on your practice and wellness data. Not a medical diagnosis.">

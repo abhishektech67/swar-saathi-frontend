@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiCoachChat, WellnessCheckIn, AiReportPanel } from "./AiFeatures";
 import LandingPage from "./LandingPage";
 import WelcomeHost, { announceWelcome } from "./WelcomePopup";
+import { LanguageProvider, LanguageToggle, useI18n } from "./i18n";
+import VoiceCheck from "./voice/VoiceCheck";
 
 const API_URL = "https://swar-saathi-backend.onrender.com";
 
@@ -53,8 +55,8 @@ const theme = {
   shadowActive: "0 4px 12px rgba(30,41,59,0.10)",
   ease: "cubic-bezier(0.22, 1, 0.36, 1)", // smooth, gentle settle — no overshoot
   font: {
-    display: '"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif',
-    body: '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
+    display: '"Outfit", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif',
+    body: '"Plus Jakarta Sans", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif',
   },
 };
 
@@ -123,7 +125,7 @@ const styles = {
 function GlobalStyle() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
       .sdb * { box-sizing: border-box; }
       .sdb button, .sdb input, .sdb select, .sdb textarea, .sdb table { font-family: ${theme.font.body}; }
       .sdb input[type="checkbox"] { accent-color: ${theme.colors.accent}; width: 17px; height: 17px; }
@@ -816,7 +818,6 @@ function CopyCode({ code }) {
 }
 
 function TherapistCodeCard({ code }) {
-  if (!code) return null;
   return (
     <Section
       icon="🔑"
@@ -824,7 +825,11 @@ function TherapistCodeCard({ code }) {
       title="Your therapist code"
       subtitle="Share this code with your patients. When they enter it (at signup or in their portal), they appear in your list. Only patients who use your code are visible to you."
     >
-      <CopyCode code={code} />
+      {code ? (
+        <CopyCode code={code} />
+      ) : (
+        <Empty text="Your code isn't available yet. Log out and log in again. If it still doesn't show, the backend on Render hasn't been updated yet." />
+      )}
     </Section>
   );
 }
@@ -942,6 +947,7 @@ function CaregiverLinkForm({ api, onLinked }) {
 }
 
 function App() {
+  const { t } = useI18n();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -960,6 +966,18 @@ function App() {
   const [completingId, setCompletingId] = useState(null);
   const [recommendation, setRecommendation] = useState("");
   const [recommendationLoading, setRecommendationLoading] = useState(false);
+
+  // Voice Check (patient home): once a check has produced a result the
+  // assigned-exercise list is shown; "coachSeed" hands a numeric summary
+  // (never audio) to the existing AI coach when the patient asks for it.
+  const [voiceDone, setVoiceDone] = useState(false);
+  const [showAssigned, setShowAssigned] = useState(false);
+  const [coachSeed, setCoachSeed] = useState(null);
+  const handleVoiceResult = useCallback((r) => { if (r) setVoiceDone(true); }, []);
+  const askCoachAboutVoice = useCallback((text) => {
+    setCoachSeed({ id: Date.now(), text });
+    setTimeout(() => document.getElementById("ai-coach")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }, []);
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -991,6 +1009,7 @@ function App() {
     resetAudio(); clearToken();
     setUser(null); setPatients([]); setSelectedPatient(null); setPatientDetail(null);
     setFeedback([]); setExercises([]); setPatientDashboard(null); setMessage(""); setRecommendation("");
+    setVoiceDone(false); setShowAssigned(false); setCoachSeed(null);
   };
 
   const handleLogin = async ({ email, password, remember }) => {
@@ -1204,54 +1223,70 @@ function App() {
       <div className="sdb" style={styles.page}>
         <GlobalStyle />
         <div style={styles.wrap}>
-          <Header title="Patient portal" user={user} logout={logout} />
+          <Header title={t("common.patientPortal")} user={user} logout={logout} />
           {message && <Notice text={message} />}
+
+          {/* Voice Check is the first meaningful action on the patient home. */}
+          <VoiceCheck onResult={handleVoiceResult} onAskCoach={askCoachAboutVoice} />
 
           <GamificationPanel totalPoints={profile.totalPoints} currentStreak={profile.currentStreak} longestStreak={profile.longestStreak} />
 
           <TherapistLinkCard api={api} />
 
           <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
-            <ScoreCard icon="🎯" accent="teal" title="Current level" value={`Level ${currentLevel}`} subtitle="Adjusts with your practice" />
-            <ScoreCard icon="📝" accent="gold" title="Exercises" value={exercises.length} subtitle="Assigned to you" />
-            <ScoreCard icon="🎙️" accent="coral" title="Practice sessions" value={patientLogs.length} subtitle="Saved recordings" />
-            <ScoreCard icon="📈" accent="teal" title="Avg. pronunciation" value={`${avgScore}%`} subtitle="Across all sessions" />
+            <ScoreCard icon="🎯" accent="teal" title={t("portal.currentLevel")} value={`${t("common.level")} ${currentLevel}`} subtitle={t("portal.adjusts")} />
+            <ScoreCard icon="📝" accent="gold" title={t("portal.exercises")} value={exercises.length} subtitle={t("portal.assignedToYou")} />
+            <ScoreCard icon="🎙️" accent="coral" title={t("portal.sessions")} value={patientLogs.length} subtitle={t("portal.savedRecordings")} />
+            <ScoreCard icon="📈" accent="teal" title={t("portal.avgPron")} value={`${avgScore}%`} subtitle={t("portal.acrossSessions")} />
           </Stagger>
 
-          <Section
-            icon="📝"
-            tone="gold"
-            title="Your home exercises"
-            subtitle="Complete your assigned exercises to earn points, then record your speech practice below. New ones are generated for you automatically as you progress."
-            right={
-              <Button
-                secondary
-                disabled={loading}
-                onClick={() => generateExercises(user.id, () => loadPatientDashboard(user.id))}
-              >
-                ✨ Get new exercises
-              </Button>
-            }
-          >
-            {exercises.length === 0 ? <Empty text="No exercises assigned yet — check back soon." /> : exercises.map((a) => (
-              <ExerciseCard
-                key={a.id}
-                assignment={a}
-                onComplete={() => completeExercise(a.id, () => loadPatientDashboard(user.id))}
-                completing={completingId === a.id}
-              />
-            ))}
-          </Section>
+          {voiceDone || showAssigned ? (
+            <Section
+              icon="📝"
+              tone="gold"
+              title={t("portal.homeExercises")}
+              subtitle={t("portal.homeExercisesSub")}
+              right={
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Button
+                    secondary
+                    disabled={loading}
+                    onClick={() => generateExercises(user.id, () => loadPatientDashboard(user.id))}
+                  >
+                    {t("portal.getNew")}
+                  </Button>
+                  {!voiceDone && <Button secondary onClick={() => setShowAssigned(false)}>{t("portal.hideAssigned")}</Button>}
+                </div>
+              }
+            >
+              {exercises.length === 0 ? <Empty text={t("portal.noExercises")} /> : exercises.map((a) => (
+                <ExerciseCard
+                  key={a.id}
+                  assignment={a}
+                  onComplete={() => completeExercise(a.id, () => loadPatientDashboard(user.id))}
+                  completing={completingId === a.id}
+                />
+              ))}
+            </Section>
+          ) : (
+            <Section
+              icon="📝"
+              tone="gold"
+              title={t("portal.assignedHeldTitle")}
+              subtitle={t("portal.assignedHeldBody", { n: exercises.length })}
+              right={<Button secondary onClick={() => setShowAssigned(true)}>{t("portal.showAssigned")}</Button>}
+            />
+          )}
 
           <WellnessCheckIn api={api} patientId={user.id} />
-          <AiCoachChat api={api} patientId={user.id} />
+          <div id="ai-coach"><AiCoachChat api={api} patientId={user.id} seed={coachSeed} /></div>
 
           <Section
             icon="🎙️"
             tone="coral"
-            title="Speech practice"
-            subtitle="Record directly in the browser. The score is an acoustic demo score, not a clinical diagnosis."
-            right={<Button secondary onClick={() => loadPatientDashboard(user.id)}>Refresh</Button>}
+            title={t("portal.speechPractice")}
+            subtitle={t("portal.speechPracticeSub")}
+            right={<Button secondary onClick={() => loadPatientDashboard(user.id)}>{t("common.refresh")}</Button>}
           >
             <div style={{ background: theme.colors.tealSoft, border: `1px solid ${theme.colors.line}`, borderRadius: theme.radius.lg, padding: "32px 24px", textAlign: "center" }}>
               <div className={isRecording ? "" : "sdb-bob"} style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
@@ -1302,7 +1337,7 @@ function App() {
       <div className="sdb" style={styles.page}>
         <GlobalStyle />
         <div style={styles.wrap}>
-          <Header title="Therapist · patient profile" user={user} logout={logout} back={() => { setSelectedPatient(null); setPatientDetail(null); setFeedback([]); setRecommendation(""); }} />
+          <Header title={t("common.therapistProfile")} user={user} logout={logout} back={() => { setSelectedPatient(null); setPatientDetail(null); setFeedback([]); setRecommendation(""); }} />
           {message && <Notice text={message} />}
 
           <GamificationPanel totalPoints={pf.totalPoints} currentStreak={pf.currentStreak} longestStreak={pf.longestStreak} />
@@ -1407,7 +1442,7 @@ function App() {
       <div className="sdb" style={styles.page}>
         <GlobalStyle />
         <div style={styles.wrap}>
-          <Header title="Therapist dashboard" user={user} logout={logout} />
+          <Header title={t("common.therapistDashboard")} user={user} logout={logout} />
           {message && <Notice text={message} />}
 
           <Stagger style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
@@ -1855,16 +1890,16 @@ function AuthScreen({ onLogin, onRegister, loading, message, notify, onBack, ini
   );
 }
 
-function greetingForHour() {
+function greetingForHour(t) {
   const h = new Date().getHours();
-  if (h < 5) return "Working late";
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Good evening";
+  if (h < 5) return t("common.greetNight");
+  if (h < 12) return t("common.greetMorning");
+  if (h < 17) return t("common.greetAfternoon");
+  return t("common.greetEvening");
 }
 
 function Header({ title, user, logout, back }) {
+  const { t } = useI18n();
   const name = (user.fullName || user.email || "there").split(" ")[0].split("@")[0];
   return (
     <div
@@ -1890,27 +1925,30 @@ function Header({ title, user, logout, back }) {
           </div>
           <div>
             {back && (
-              <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 8, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>← Back to patients</button>
+              <button onClick={back} style={{ border: 0, background: "none", cursor: "pointer", padding: 0, marginBottom: 8, color: theme.colors.teal, fontWeight: 700, fontSize: 13.5 }}>{t("common.backToPatients")}</button>
             )}
             <div style={{ fontFamily: theme.font.display, fontWeight: 650, fontSize: 20, lineHeight: 1 }}>
               Swar <span style={{ color: theme.colors.teal }}>Saathi</span>
             </div>
             <div style={{ fontWeight: 700, marginTop: 8, fontSize: 18, fontFamily: theme.font.display }}>
-              {greetingForHour()}, {name} <span style={{ opacity: 0.55, fontWeight: 500, fontSize: 14 }}>· {title}</span>
+              {greetingForHour(t)}, {name} <span style={{ opacity: 0.55, fontWeight: 500, fontSize: 14 }}>· {title}</span>
             </div>
           </div>
         </div>
-        <button
-          onClick={logout}
-          className="sdb-hover-lift"
-          style={{
-            border: "1.5px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.08)", color: "#fff",
-            borderRadius: theme.radius.pill, padding: "12px 22px", fontWeight: 700, fontSize: 14.5,
-            fontFamily: theme.font.display, cursor: "pointer",
-          }}
-        >
-          Log out
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <LanguageToggle dark />
+          <button
+            onClick={logout}
+            className="sdb-hover-lift"
+            style={{
+              border: "1.5px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.08)", color: "#fff",
+              borderRadius: theme.radius.pill, padding: "12px 22px", fontWeight: 700, fontSize: 14.5,
+              fontFamily: theme.font.display, cursor: "pointer",
+            }}
+          >
+            {t("common.logout")}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2134,6 +2172,7 @@ function FeedbackForm({ onSubmit, submitting }) {
 }
 
 function CaregiverPortal({ user, logout, api }) {
+  const { t } = useI18n();
   const [patients, setPatients] = useState([]);
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState([]);
@@ -2181,7 +2220,7 @@ function CaregiverPortal({ user, logout, api }) {
     <div className="sdb" style={styles.page}>
       <GlobalStyle />
       <div style={styles.wrap}>
-        <Header title="Caregiver portal" user={user} logout={logout} />
+        <Header title={t("common.caregiverPortal")} user={user} logout={logout} />
         {message && <Notice text={message} />}
         <Section icon="👀" tone="teal" title="Patient monitoring" subtitle="Link a patient with their invite code, then review exercises, therapy progress and feedback." right={<Button secondary onClick={load}>{loading ? "Refreshing…" : "Refresh"}</Button>}>
           <CaregiverLinkForm api={api} onLinked={load} />
@@ -2234,10 +2273,10 @@ function CaregiverPortal({ user, logout, api }) {
 
 function Root() {
   return (
-    <>
+    <LanguageProvider>
       <App />
       <WelcomeHost />
-    </>
+    </LanguageProvider>
   );
 }
 
