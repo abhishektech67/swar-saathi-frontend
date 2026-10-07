@@ -51,9 +51,16 @@ export function buildRecommendations(result, lang = "en", perWeakness = 2) {
 
   for (const weakness of weakest) {
     const level = difficultyFor(scores[weakness]);
-    const picks = EXERCISES.filter((e) => e.weakness === weakness)
-      .sort((a, b) => Math.abs(a.baseDifficulty - level) - Math.abs(b.baseDifficulty - level) || a.baseDifficulty - b.baseDifficulty)
-      .slice(0, perWeakness);
+    const byCloseness = EXERCISES.filter((e) => e.weakness === weakness)
+      .sort((a, b) => Math.abs(a.baseDifficulty - level) - Math.abs(b.baseDifficulty - level) || a.baseDifficulty - b.baseDifficulty);
+    // always offer a mix: the best classic exercise AND the best sound game (snake, dog bark ...)
+    const classic = byCloseness.filter((e) => !e.game);
+    const games = byCloseness.filter((e) => e.game);
+    const picks = [];
+    if (classic[0]) picks.push(classic[0]);
+    if (games[0]) picks.push(games[0]);
+    for (const e of byCloseness) { if (picks.length >= perWeakness) break; if (!picks.includes(e)) picks.push(e); }
+    picks.length = Math.min(picks.length, Math.max(perWeakness, 1));
 
     for (const ex of picks) {
       const p = ex.levels[level];
@@ -73,6 +80,9 @@ export function buildRecommendations(result, lang = "en", perWeakness = 2) {
         difficulty: level,
         duration: `${p.mins} ${MIN_UNIT[L]}`,
         target: fill(ex.targetTpl[L], vars),
+        sound: ex.sound,
+        demoText: ex.demoText ? ex.demoText[L] : undefined,
+        game: Boolean(ex.game),
       });
     }
   }

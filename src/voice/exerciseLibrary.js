@@ -23,6 +23,7 @@ export const EXERCISES = [
   /* ------------------------------- PITCH ------------------------------- */
   {
     id: "pitch-comfortable-hold",
+    sound: "ah",
     weakness: "pitch",
     baseDifficulty: 1,
     levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
@@ -39,6 +40,7 @@ export const EXERCISES = [
   },
   {
     id: "pitch-gentle-glide",
+    sound: "ah",
     weakness: "pitch",
     baseDifficulty: 2,
     levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
@@ -55,6 +57,7 @@ export const EXERCISES = [
   },
   {
     id: "pitch-target-return",
+    sound: "ah",
     weakness: "pitch",
     baseDifficulty: 3,
     levels: { 1: { hold: 5, reps: 3, mins: 4 }, 2: { hold: 7, reps: 4, mins: 5 }, 3: { hold: 10, reps: 5, mins: 6 } },
@@ -73,6 +76,7 @@ export const EXERCISES = [
   /* ------------------------------- VOLUME ------------------------------ */
   {
     id: "volume-even-hum",
+    sound: "hum",
     weakness: "volume",
     baseDifficulty: 1,
     levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
@@ -89,6 +93,7 @@ export const EXERCISES = [
   },
   {
     id: "volume-steady-aaah",
+    sound: "ah",
     weakness: "volume",
     baseDifficulty: 2,
     levels: { 1: { hold: 5, reps: 3, mins: 3 }, 2: { hold: 7, reps: 4, mins: 4 }, 3: { hold: 9, reps: 5, mins: 5 } },
@@ -105,6 +110,7 @@ export const EXERCISES = [
   },
   {
     id: "volume-soft-medium-soft",
+    sound: "ah",
     weakness: "volume",
     baseDifficulty: 3,
     levels: { 1: { hold: 6, reps: 3, mins: 4 }, 2: { hold: 8, reps: 4, mins: 5 }, 3: { hold: 10, reps: 5, mins: 6 } },
@@ -123,6 +129,7 @@ export const EXERCISES = [
   /* ------------------------------- BREATH ------------------------------ */
   {
     id: "breath-slow-release",
+    sound: "ah",
     weakness: "breath",
     baseDifficulty: 1,
     levels: { 1: { hold: 5, reps: 3, mins: 3 }, 2: { hold: 7, reps: 4, mins: 4 }, 3: { hold: 9, reps: 5, mins: 5 } },
@@ -139,6 +146,7 @@ export const EXERCISES = [
   },
   {
     id: "breath-belly-aaah",
+    sound: "ah",
     weakness: "breath",
     baseDifficulty: 2,
     levels: { 1: { hold: 6, reps: 3, mins: 4 }, 2: { hold: 8, reps: 4, mins: 5 }, 3: { hold: 10, reps: 5, mins: 6 } },
@@ -155,6 +163,7 @@ export const EXERCISES = [
   },
   {
     id: "breath-extended-hold",
+    sound: "ah",
     weakness: "breath",
     baseDifficulty: 3,
     levels: { 1: { hold: 7, reps: 3, mins: 4 }, 2: { hold: 9, reps: 4, mins: 5 }, 3: { hold: 12, reps: 5, mins: 6 } },
@@ -173,6 +182,7 @@ export const EXERCISES = [
   /* ----------------------------- PROJECTION ---------------------------- */
   {
     id: "projection-open-aaah",
+    sound: "ah",
     weakness: "projection",
     baseDifficulty: 1,
     levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
@@ -189,6 +199,7 @@ export const EXERCISES = [
   },
   {
     id: "projection-count-aloud",
+    demoText: { en: "One, two, three, four, five", hi: "एक, दो, तीन, चार, पाँच" },
     weakness: "projection",
     baseDifficulty: 2,
     levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 5, reps: 4, mins: 4 }, 3: { hold: 6, reps: 5, mins: 5 } },
@@ -205,6 +216,7 @@ export const EXERCISES = [
   },
   {
     id: "projection-across-room",
+    demoText: { en: "Hello, how are you today?", hi: "नमस्ते, आप आज कैसे हैं?" },
     weakness: "projection",
     baseDifficulty: 3,
     levels: { 1: { hold: 5, reps: 3, mins: 4 }, 2: { hold: 6, reps: 4, mins: 5 }, 3: { hold: 8, reps: 5, mins: 6 } },
@@ -217,6 +229,105 @@ export const EXERCISES = [
     instruction: {
       en: "Imagine speaking to a friend a few steps away. Say a short phrase of your choice for about {hold} seconds, using steady breath and a comfortable pitch near {target} Hz. Never shout or strain. Repeat {reps} times.",
       hi: "कल्पना करें कि कुछ क़दम दूर खड़े किसी दोस्त से बात कर रहे हैं। अपनी पसंद का कोई छोटा वाक्य लगभग {hold} सेकंड तक बोलें, स्थिर साँस और लगभग {target} Hz के आसपास आरामदायक स्वर के साथ। चिल्लाएँ नहीं और ज़ोर न लगाएँ। {reps} बार दोहराएँ।",
+    },
+  },
+  /* ------------------- SOUND GAMES (play demo -> copy -> record) ------------------- */
+  // `sound` picks the demo played by SoundPractice.jsx; `game: true` marks these as
+  // the animal / sound exercises (one of them is always offered per weak area).
+  {
+    id: "pitch-owl-hoot",
+    weakness: "pitch", baseDifficulty: 1, game: true, sound: "hoot",
+    levels: { 1: { hold: 2, reps: 4, mins: 3 }, 2: { hold: 3, reps: 5, mins: 4 }, 3: { hold: 4, reps: 6, mins: 5 } },
+    targetTpl: { en: "Soft 'hoo' near {target} Hz", hi: "{target} Hz के आसपास हल्की 'हू'" },
+    title: { en: "Owl Hoot", hi: "उल्लू की हू-हू" },
+    description: { en: "Make a gentle, steady 'hoo-hoo' like an owl.", hi: "उल्लू की तरह हल्की और स्थिर 'हू-हू' निकालना।" },
+    instruction: {
+      en: "Press Play demo and listen to the owl's soft 'hoo… hoo'. Round your lips and copy it on a comfortable low note near {target} Hz. Hold each 'hoo' for about {hold} seconds and keep it smooth. Do {reps} hoots, then press Record and try it yourself.",
+      hi: "'डेमो सुनें' दबाकर उल्लू की हल्की 'हू… हू' सुनें। होंठ गोल करें और लगभग {target} Hz के आसपास आरामदायक नीचे के स्वर पर उसकी नकल करें। हर 'हू' लगभग {hold} सेकंड तक सहज रखें। {reps} बार करें, फिर 'रिकॉर्ड करें' दबाकर खुद कोशिश करें।",
+    },
+  },
+  {
+    id: "pitch-cat-meow",
+    weakness: "pitch", baseDifficulty: 2, game: true, sound: "meow",
+    levels: { 1: { hold: 2, reps: 3, mins: 3 }, 2: { hold: 3, reps: 4, mins: 4 }, 3: { hold: 4, reps: 5, mins: 5 } },
+    targetTpl: { en: "Glide inside {low}–{high} Hz", hi: "{low}–{high} Hz के भीतर फिसलें" },
+    title: { en: "Cat Meow Glide", hi: "बिल्ली की म्याऊँ फिसलन" },
+    description: { en: "Slide your voice up and down smoothly, like a meow.", hi: "म्याऊँ की तरह आवाज़ को सहज रूप से ऊपर-नीचे ले जाना।" },
+    instruction: {
+      en: "Press Play demo and listen to the cat's 'mee-ow': the voice glides up on 'mee' and down on 'ow'. Copy it slowly inside your observed range ({low}–{high} Hz), starting near {target} Hz. Each meow should last about {hold} seconds and stay smooth. Do {reps} meows, then press Record.",
+      hi: "'डेमो सुनें' दबाकर बिल्ली की 'म्याऊँ' सुनें: 'म्या' पर आवाज़ ऊपर और 'ऊँ' पर नीचे जाती है। अपने देखे गए दायरे ({low}–{high} Hz) में, लगभग {target} Hz से शुरू करके, धीरे-धीरे उसकी नकल करें। हर म्याऊँ लगभग {hold} सेकंड की और सहज हो। {reps} बार करें, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "volume-bee-buzz",
+    weakness: "volume", baseDifficulty: 1, game: true, sound: "buzz",
+    levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
+    targetTpl: { en: "Even buzz for {hold} s", hi: "{hold} सेकंड तक एक-सी भनभन" },
+    title: { en: "Bee Buzz", hi: "मधुमक्खी की भनभन" },
+    description: { en: "Keep a buzzing 'zzzz' at the same loudness.", hi: "'ज़्ज़्ज़' की भनभन को एक-सी तीव्रता पर रखना।" },
+    instruction: {
+      en: "Press Play demo and listen to the bee's steady 'zzzzz'. Close your teeth lightly and make the same buzzing 'zzzz' at an even, comfortable loudness for {hold} seconds. Keep it the same from start to finish. Repeat {reps} times, then press Record.",
+      hi: "'डेमो सुनें' दबाकर मधुमक्खी की स्थिर 'ज़्ज़्ज़्ज़' सुनें। दाँत हल्के से मिलाकर वही भनभन आरामदायक और एक-सी तीव्रता पर {hold} सेकंड तक निकालें। शुरू से अंत तक एक जैसी रखें। {reps} बार दोहराएँ, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "breath-snake-hiss",
+    weakness: "breath", baseDifficulty: 1, game: true, sound: "hiss",
+    levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
+    targetTpl: { en: "Hiss for {hold} seconds", hi: "{hold} सेकंड की फुफकार" },
+    title: { en: "Snake Hiss", hi: "साँप की फुफकार" },
+    description: { en: "Let the air out slowly and evenly in a long 'ssss'.", hi: "लंबी 'ssss' में हवा को धीरे-धीरे और बराबर छोड़ना।" },
+    instruction: {
+      en: "Press Play demo and listen to the snake's long 'ssssss'. Breathe in gently through your nose, then let the air out slowly as a smooth 'ssss' with your teeth close together. Try to last about {hold} seconds without it getting weaker or stuttering. Rest, repeat {reps} times, then press Record.",
+      hi: "'डेमो सुनें' दबाकर साँप की लंबी 'ssssss' सुनें। नाक से धीरे से साँस लें, फिर दाँत पास रखकर हवा को धीरे-धीरे एक सहज 'ssss' में छोड़ें। कोशिश करें कि लगभग {hold} सेकंड तक आवाज़ कमज़ोर या टूटी हुई न हो। आराम करें, {reps} बार दोहराएँ, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "breath-quiet-shh",
+    weakness: "breath", baseDifficulty: 2, game: true, sound: "shh",
+    levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 6, reps: 4, mins: 4 }, 3: { hold: 8, reps: 5, mins: 5 } },
+    targetTpl: { en: "Soft 'shhh' for {hold} s", hi: "{hold} सेकंड की हल्की 'शश'" },
+    title: { en: "Quiet Hush", hi: "शांत 'शश'" },
+    description: { en: "A long, soft 'shhh' trains steady breath control.", hi: "लंबी, हल्की 'शश' से साँस पर स्थिर नियंत्रण बनता है।" },
+    instruction: {
+      en: "Press Play demo and listen to the soft 'shhhh'. Breathe in comfortably, round your lips and release a quiet, even 'shhh' for about {hold} seconds. Keep your shoulders relaxed. Repeat {reps} times, then press Record.",
+      hi: "'डेमो सुनें' दबाकर हल्की 'शशशश' सुनें। आराम से साँस लें, होंठ गोल करें और लगभग {hold} सेकंड तक शांत, एक-सी 'शश' छोड़ें। कंधे ढीले रखें। {reps} बार दोहराएँ, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "projection-dog-bark",
+    weakness: "projection", baseDifficulty: 1, game: true, sound: "bark",
+    levels: { 1: { hold: 3, reps: 3, mins: 3 }, 2: { hold: 3, reps: 4, mins: 4 }, 3: { hold: 3, reps: 5, mins: 5 } },
+    targetTpl: { en: "3 clear 'woof' sounds", hi: "3 साफ़ 'भौं' आवाज़ें" },
+    title: { en: "Dog Bark", hi: "कुत्ते का भौंकना" },
+    description: { en: "Short, supported 'woof' sounds from your belly.", hi: "पेट के सहारे से निकली छोटी 'भौं' आवाज़ें।" },
+    instruction: {
+      en: "Press Play demo and listen to the dog's short 'woof' sounds. Take a relaxed breath and say 3 clear, short 'woof' sounds, feeling your belly push gently with each one. Keep them comfortable, never shouted or strained. Do {reps} rounds with a rest between, then press Record.",
+      hi: "'डेमो सुनें' दबाकर कुत्ते की छोटी 'भौं' आवाज़ें सुनें। आराम से साँस लें और 3 साफ़, छोटी 'भौं' बोलें; हर बार पेट हल्के से आगे आए। आवाज़ें आरामदायक रखें, चिल्लाएँ या ज़ोर न लगाएँ। बीच में आराम करते हुए {reps} राउंड करें, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "projection-lion-roar",
+    weakness: "projection", baseDifficulty: 2, game: true, sound: "roar",
+    levels: { 1: { hold: 3, reps: 3, mins: 3 }, 2: { hold: 4, reps: 4, mins: 4 }, 3: { hold: 5, reps: 5, mins: 5 } },
+    targetTpl: { en: "Gentle low roar", hi: "हल्की गहरी दहाड़" },
+    title: { en: "Gentle Lion Roar", hi: "हल्की शेर की दहाड़" },
+    description: { en: "A low, supported roar without straining the throat.", hi: "गले पर ज़ोर डाले बिना गहरी, सधी हुई दहाड़।" },
+    instruction: {
+      en: "Press Play demo and listen to the lion's low roar. Copy it as a gentle 'rrraaa' for about {hold} seconds, feeling your belly support the sound while your throat stays relaxed. It is a gentle roar, never a strain. Do {reps} rounds, then press Record.",
+      hi: "'डेमो सुनें' दबाकर शेर की गहरी दहाड़ सुनें। उसकी नकल एक हल्की 'रर्रआ' से लगभग {hold} सेकंड तक करें; पेट आवाज़ को सहारा दे और गला ढीला रहे। यह हल्की दहाड़ है, ज़ोर नहीं लगाना है। {reps} राउंड करें, फिर 'रिकॉर्ड करें' दबाएँ।",
+    },
+  },
+  {
+    id: "projection-lip-pops",
+    weakness: "projection", baseDifficulty: 3, game: true, sound: "pop",
+    levels: { 1: { hold: 4, reps: 3, mins: 3 }, 2: { hold: 5, reps: 4, mins: 4 }, 3: { hold: 6, reps: 5, mins: 5 } },
+    targetTpl: { en: "Crisp, equal 'pa' pops", hi: "साफ़, बराबर 'प' की आवाज़ें" },
+    title: { en: "Lip Pop 'Pa-Pa-Pa'", hi: "होंठ से 'प-प-प'" },
+    description: { en: "Crisp, equally strong pops train clear speech energy.", hi: "साफ़ और बराबर ताक़त की आवाज़ें बोलने की स्पष्टता बढ़ाती हैं।" },
+    instruction: {
+      en: "Press Play demo and listen to 'pa… pa… pa'. Say 'pa pa pa' clearly and crisply, keeping every pop equally strong, for about {hold} seconds. Stay comfortable. Repeat {reps} times, then press Record.",
+      hi: "'डेमो सुनें' दबाकर 'प… प… प' सुनें। 'पा पा पा' साफ़ और स्पष्ट बोलें, हर आवाज़ बराबर ताक़त की हो, लगभग {hold} सेकंड तक। आराम से करें। {reps} बार दोहराएँ, फिर 'रिकॉर्ड करें' दबाएँ।",
     },
   },
 ];

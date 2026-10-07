@@ -4,6 +4,7 @@ import { VoiceRecorder, isRecordingSupported } from "./audioRecorder";
 import { analyzeSamples } from "./audioAnalyzer";
 import { METRIC_ORDER, WEIGHTS, scoreBand, scoreVoice } from "./voiceScoring";
 import { buildRecommendations } from "./exerciseRecommendation";
+import SoundPractice from "./SoundPractice";
 
 /* ======================================================================
  * Swar Saathi — VoiceCheck.jsx
@@ -229,6 +230,7 @@ function ExerciseTile({ ex, t }) {
         <Chip k={t("voice.duration")} v={ex.duration} />
         <Chip k={t("voice.target")} v={ex.target} />
       </div>
+      <SoundPractice exercise={ex} colors={c} />
     </article>
   );
 }

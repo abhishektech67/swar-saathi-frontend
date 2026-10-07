@@ -25,7 +25,10 @@ import { useI18n } from "../i18n";
 const SOUND_RULES = [
   { kind: "hiss", re: /snake|hiss|\bsss+|सांप|साँप|सर्प|फुफकार/i, label: { en: "Snake hiss — “sssss”", hi: "साँप की फुफकार — “ssss”" } },
   { kind: "buzz", re: /\bbee\b|buzz|\bzzz+|mosquito|मधुमक्खी|भनभन|मच्छर/i, label: { en: "Bee buzz — “zzzzz”", hi: "मधुमक्खी की भनभन — “zzzz”" } },
-  { kind: "roar", re: /lion|tiger|roar|growl|dog|\brrr+|शेर|बाघ|दहाड़|गुर्र/i, label: { en: "Lion roar — “rrrraaa”", hi: "शेर की दहाड़ — “rrraa”" } },
+  { kind: "bark", re: /\bdog\b|bark|woof|puppy|कुत्ता|कुत्ते|भौं|भौंक/i, label: { en: "Dog bark — “woof woof woof”", hi: "कुत्ते की भौं — “भौं भौं भौं”" } },
+  { kind: "meow", re: /\bcat\b|meow|kitten|बिल्ली|म्याऊँ|म्याऊ/i, label: { en: "Cat meow — “mee-ow”", hi: "बिल्ली की म्याऊँ — “म्याऊँ”" } },
+  { kind: "hoot", re: /\bowl\b|hoot|उल्लू/i, label: { en: "Owl hoot — “hoo… hoo”", hi: "उल्लू की हू-हू — “हू… हू”" } },
+  { kind: "roar", re: /lion|tiger|roar|growl|\brrr+|शेर|बाघ|दहाड़|गुर्र/i, label: { en: "Lion roar — “rrrraaa”", hi: "शेर की दहाड़ — “rrraa”" } },
   { kind: "shh", re: /\bshh+|quiet|hush|sh sound|शश|चुप/i, label: { en: "Hush — “shhhh”", hi: "शांत — “shhhh”" } },
   { kind: "pop", re: /balloon|\bpop\b|puh|\bpa\b|\bba\b|lip|bubble|गुब्बारा|पॉप|होंठ/i, label: { en: "Lip pop — “pa pa pa”", hi: "होंठ से “प प प”" } },
   { kind: "hum", re: /\bhum\b|humming|hummm|\bmmm+|गुनगुन/i, label: { en: "Hum — “mmmmm”", hi: "गुनगुनाना — “mmmm”" } },
@@ -33,6 +36,14 @@ const SOUND_RULES = [
 ];
 
 export function detectSound(exercise) {
+  // 1) the exercise names its own sound (all library exercises do)
+  if (exercise?.sound) {
+    const hit = SOUND_RULES.find((r) => r.kind === exercise.sound);
+    if (hit) return hit;
+  }
+  // 2) spoken-phrase exercises have no sound effect, they speak demoText
+  if (exercise?.demoText) return null;
+  // 3) assigned exercises from the backend: guess from the words in the exercise
   const text = [exercise?.title, exercise?.description, exercise?.instructions].filter(Boolean).join(" ");
   for (const r of SOUND_RULES) if (r.re.test(text)) return r;
   return null;
@@ -188,6 +199,69 @@ function synth(kind, onEnd) {
       o.connect(og); og.connect(out);
       o.start(now + t0 + 0.05); o.stop(now + t0 + 0.45);
     });
+  } else if (kind === "bark") {
+    // dog: three short "woof" bursts, pitch dropping fast
+    dur = 1.7;
+    out.gain.value = 1;
+    [0.05, 0.6, 1.15].forEach((t0) => {
+      const o = osc("sawtooth", 420);
+      o.frequency.setValueAtTime(430, now + t0);
+      o.frequency.exponentialRampToValueAtTime(210, now + t0 + 0.2);
+      const f = filter("bandpass", 950, 2.2), g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now + t0);
+      g.gain.linearRampToValueAtTime(1.0, now + t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t0 + 0.28);
+      nodes.push(g);
+      o.connect(f); f.connect(g); g.connect(out);
+      o.start(now + t0); o.stop(now + t0 + 0.3);
+      const n = noise(0.12), nb = filter("bandpass", 1500, 0.8), ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.5, now + t0);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + t0 + 0.1);
+      nodes.push(ng);
+      n.connect(nb); nb.connect(ng); ng.connect(out);
+      n.start(now + t0);
+    });
+  } else if (kind === "meow") {
+    // cat: "mee-ow" = pitch glides up then down with moving vowel formant
+    dur = 3;
+    out.gain.value = 1;
+    [0.1, 1.6].forEach((t0) => {
+      const o = osc("sawtooth", 450);
+      o.frequency.setValueAtTime(450, now + t0);
+      o.frequency.linearRampToValueAtTime(860, now + t0 + 0.45);
+      o.frequency.linearRampToValueAtTime(520, now + t0 + 1.2);
+      const f = filter("bandpass", 900, 4);
+      f.frequency.setValueAtTime(2300, now + t0);
+      f.frequency.linearRampToValueAtTime(900, now + t0 + 1.2);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now + t0);
+      g.gain.linearRampToValueAtTime(1.3, now + t0 + 0.12);
+      g.gain.setValueAtTime(1.3, now + t0 + 0.8);
+      g.gain.linearRampToValueAtTime(0.0001, now + t0 + 1.25);
+      nodes.push(g);
+      o.connect(f); f.connect(g); g.connect(out);
+      o.start(now + t0); o.stop(now + t0 + 1.3);
+    });
+  } else if (kind === "hoot") {
+    // owl: two soft, rounded "hoo" notes
+    dur = 2;
+    out.gain.value = 1;
+    [0.1, 1.0].forEach((t0) => {
+      const o = osc("sine", 340), h = osc("sine", 680);
+      o.frequency.setValueAtTime(350, now + t0);
+      o.frequency.linearRampToValueAtTime(310, now + t0 + 0.6);
+      h.frequency.setValueAtTime(700, now + t0);
+      h.frequency.linearRampToValueAtTime(620, now + t0 + 0.6);
+      const hg = ctx.createGain(); hg.gain.value = 0.18; nodes.push(hg);
+      const lp = filter("lowpass", 900), g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now + t0);
+      g.gain.linearRampToValueAtTime(1.0, now + t0 + 0.12);
+      g.gain.setValueAtTime(1.0, now + t0 + 0.4);
+      g.gain.linearRampToValueAtTime(0.0001, now + t0 + 0.7);
+      nodes.push(g);
+      o.connect(lp); h.connect(hg); hg.connect(lp); lp.connect(g); g.connect(out);
+      o.start(now + t0); h.start(now + t0); o.stop(now + t0 + 0.75); h.stop(now + t0 + 0.75);
+    });
   } else {
     return null;
   }
@@ -298,7 +372,7 @@ export default function SoundPractice({ exercise, colors = {} }) {
     if (sound) h = synth(sound.kind, onEnd);
     if (!h) {
       // no known sound for this exercise: speak the exercise title so the patient still hears a model
-      h = speak(exercise?.title || "", lang, onEnd);
+      h = speak(exercise?.demoText || exercise?.title || "", lang, onEnd);
     }
     if (!h) { setError(L.noSpeech); release(myStop); return; }
     demoRef.current = h;

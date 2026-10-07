@@ -29,7 +29,8 @@ New:      src/i18n.jsx, src/voice/{audioAnalyzer,audioRecorder,voiceScoring,exer
 11. Verify the Netlify deploy preview builds.
 12. Test the production site end to end, then merge.
 
-## NEW: Play demo + Record buttons on every exercise
-New file: src/voice/SoundPractice.jsx
-Changed:  src/App.jsx (1 import + 1 line inside ExerciseCard)
+## NEW: Play demo + Record buttons and sound-game exercises
+New:      src/voice/SoundPractice.jsx
+Changed:  src/voice/VoiceCheck.jsx, src/voice/exerciseLibrary.js, src/voice/exerciseRecommendation.js, src/App.jsx
 Copy the src/ folder over your frontend's src/. No new packages, no backend changes.
+Sounds: snake hiss, bee buzz, dog bark, lion roar, cat meow, owl hoot, lip pops, hush, aaah, hum.
