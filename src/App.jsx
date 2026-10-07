@@ -4,6 +4,7 @@ import LandingPage from "./LandingPage";
 import WelcomeHost, { announceWelcome } from "./WelcomePopup";
 import { LanguageProvider, LanguageToggle, useI18n } from "./i18n";
 import VoiceCheck from "./voice/VoiceCheck";
+import SoundPractice from "./voice/SoundPractice";
 
 const API_URL = "https://swar-saathi-backend.onrender.com";
 
@@ -2001,6 +2002,7 @@ function ExerciseCard({ assignment, therapist, onComplete, completing }) {
         <strong style={{ fontSize: 13.5 }}>Instructions</strong>
         <p style={{ ...styles.muted, margin: "5px 0 0" }}>{e.instructions || "Follow the therapist's instructions."}</p>
       </div>
+      {!therapist && !done && <SoundPractice exercise={e} colors={theme.colors} />}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, flexWrap: "wrap", gap: 10 }}>
         <div style={{ fontSize: 12, color: theme.colors.inkFaint }}>
           {e.category || "Therapy"}{assignment.dueDate ? ` · Due ${new Date(assignment.dueDate).toLocaleDateString()}` : ""}{therapist ? " · Therapist view" : ""}
